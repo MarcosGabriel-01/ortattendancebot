@@ -1,0 +1,40 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos temporales / backup
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+
+# Archivos de entorno o IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+npm-debug.log
+yarn.lock
+
+# Configuración de Moodle
+config.php
+
+# Archivos de prueba o dumps
+*.sql
+*.sqlite
+*.db
+*.zip
+
+# Carpeta de cache 
+cache/
+tmp/

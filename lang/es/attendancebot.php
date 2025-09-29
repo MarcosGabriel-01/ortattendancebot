@@ -108,3 +108,7 @@ $string['text_mensaje_warning'] = 'AttendanceBot depende de Attendance para pers
 $string['text_title'] = 'Instrucciones de utilización de AttendanceBot';
 $string['warning_enabled'] = 'CUIDADO: Está desactivado el plugin de asistencia automática';
 $string['warning_late_tolerance'] = 'CUIDADO: Está desactivada la tolerancia de llegada tarde';
+$string['pluginadministration'] = 'el admin';
+$string['gotocourses'] = 'Volver a mis cursos';
+$string['taskSuccess'] = 'La tarea programada se ejecutó manualmente con éxito';
+$string['runManualTask'] = 'Ejecutar tarea manualmente';

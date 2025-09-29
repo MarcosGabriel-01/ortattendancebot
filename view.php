@@ -58,7 +58,7 @@ echo $OUTPUT->box(get_string('text_mensaje_warning', 'mod_attendancebot'));
 
 echo $OUTPUT->single_button(
     new moodle_url('/mod/attendancebot/manual_run.php'),
-    'Ejecutar tarea manualmente',
+    get_string('runManualTask', 'attendancebot'),
     'post'
 );
 

@@ -13,7 +13,10 @@ $task->execute();
 
 // Mostrar resultado con diseño de Moodle
 echo $OUTPUT->header();
-echo $OUTPUT->notification('✅ La tarea programada se ejecutó manualmente con éxito.', 'notifysuccess');
-// llevar a view
-// echo $OUTPUT->continue_button($PAGE->set_url('/mod/attendancebot/view.php'));
+echo $OUTPUT->notification(get_string('taskSuccess', 'attendancebot'), 'notifysuccess');
+echo $OUTPUT->single_button(
+    new moodle_url('/my/courses.php'),
+    get_string('gotocourses', 'attendancebot'),
+    'get'
+);
 echo $OUTPUT->footer();

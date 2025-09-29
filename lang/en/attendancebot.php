@@ -108,3 +108,7 @@ $string['text_mensaje_warning'] = 'AttendanceBot depends on the Attendance plugi
 $string['text_title'] = 'AttendanceBot Usage Instructions';
 $string['warning_enabled'] = 'WARNING: The automatic attendance plugin is disabled';
 $string['warning_late_tolerance'] = 'WARNING: Late arrival tolerance is disabled';
+$string['pluginadministration'] = 'plugin administration';
+$string['gotocourses'] = 'Return to My Courses';
+$string['taskSuccess'] = 'The scheduled task was successfully executed manually';
+$string['runManualTask'] = 'Run task manually';

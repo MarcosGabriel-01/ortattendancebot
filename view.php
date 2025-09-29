@@ -10,6 +10,7 @@ require_once($CFG->dirroot . '/mod/attendancebot/classes/recollectors/zoomRecoll
 require_once($CFG->dirroot . '/mod/attendancebot/classes/utils/StudentAttendance.php');
 require_once($CFG->dirroot . '/mod/attendancebot/utilities.php');
 require_once($CFG->dirroot . '/mod/attendance/externallib.php');
+require_once($CFG->dirroot . '/mod/attendancebot/classes/task/scheduler_task.php');
 
 // Course module id.
 $id = optional_param('id', 0, PARAM_INT);
@@ -54,6 +55,12 @@ echo $OUTPUT->box(get_string('text_descripcion_1', 'mod_attendancebot'));
 echo $OUTPUT->box(get_string('text_descripcion_2', 'mod_attendancebot'));
 echo $OUTPUT->box(get_string('text_instrucciones', 'mod_attendancebot'));
 echo $OUTPUT->box(get_string('text_mensaje_warning', 'mod_attendancebot'));
+
+echo $OUTPUT->single_button(
+    new moodle_url('/mod/attendancebot/manual_run.php'),
+    'Ejecutar tarea manualmente',
+    'post'
+);
 
 echo $OUTPUT->footer();
 ?>

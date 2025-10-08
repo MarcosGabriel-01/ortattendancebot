@@ -12,7 +12,7 @@ require_once($CFG->dirroot . '/mod/attendancebot/classes/task/scheduler_task.php
 
 // Parameters
 $id = optional_param('id', 0, PARAM_INT);
-$t = optional_param('t', 0, PARAM_INT);
+$t  = optional_param('t', 0, PARAM_INT);
 
 global $DB;
 
@@ -53,14 +53,16 @@ echo $OUTPUT->box(get_string('text_descripcion_2', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_instrucciones', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_mensaje_warning', 'attendancebot'));
 
-// Form
-$createfolderurl = new moodle_url('/mod/attendancebot/create_folder.php');
+// -----------------------------------------------------------------------------
+// 1️⃣ Create Filesystem Form
+// -----------------------------------------------------------------------------
+$createfilesystemurl = new moodle_url('/mod/attendancebot/create_filesystem.php');
 $sites = ['YA' => 'YA', 'BE' => 'BE'];
 $classes = ['FPR' => 'FPR', 'PNT' => 'PNT'];
 $divisions = ['A' => 'A', 'B' => 'B', 'C' => 'C', 'D' => 'D'];
 
 echo html_writer::start_tag('form', [
-    'action' => $createfolderurl,
+    'action' => $createfilesystemurl,
     'method' => 'post',
     'style' => 'margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 8px;'
 ]);
@@ -81,27 +83,22 @@ echo html_writer::tag('label', 'Division:', ['for' => 'division']);
 echo html_writer::select($divisions, 'division', '', ['' => 'Seleccionar división'], ['id' => 'division', 'required' => 'required']);
 echo html_writer::empty_tag('br');
 
-// DATE input (split into year, month, day)
+// Date inputs
 echo html_writer::tag('label', 'Year:', ['for' => 'year']);
-echo html_writer::empty_tag('input', [
-    'type' => 'number', 'name' => 'year', 'id' => 'year', 'min' => 2000, 'max' => 2099, 'required' => 'required'
-]);
+echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'year', 'id' => 'year', 'min' => 2000, 'max' => 2099, 'required' => 'required']);
 echo html_writer::empty_tag('br');
 
 echo html_writer::tag('label', 'Month:', ['for' => 'month']);
-echo html_writer::empty_tag('input', [
-    'type' => 'number', 'name' => 'month', 'id' => 'month', 'min' => 1, 'max' => 12, 'required' => 'required'
-]);
+echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'month', 'id' => 'month', 'min' => 1, 'max' => 12, 'required' => 'required']);
 echo html_writer::empty_tag('br');
 
 echo html_writer::tag('label', 'Day:', ['for' => 'day']);
-echo html_writer::empty_tag('input', [
-    'type' => 'number', 'name' => 'day', 'id' => 'day', 'min' => 1, 'max' => 31, 'required' => 'required'
-]);
+echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'day', 'id' => 'day', 'min' => 1, 'max' => 31, 'required' => 'required']);
 echo html_writer::empty_tag('br');
 
+// Hidden date field via JS
 $js = <<<JS
-document.querySelector('form[action*="create_folder.php"]').addEventListener('submit', function(e) {
+document.querySelector('form[action*="create_filesystem.php"]').addEventListener('submit', function(e) {
     const year = document.getElementById('year').value.padStart(4, '0');
     const month = document.getElementById('month').value.padStart(2, '0');
     const day = document.getElementById('day').value.padStart(2, '0');
@@ -114,13 +111,30 @@ document.querySelector('form[action*="create_folder.php"]').addEventListener('su
 JS;
 $PAGE->requires->js_amd_inline($js);
 
-
 echo html_writer::empty_tag('input', [
     'type' => 'submit',
     'value' => get_string('create_folder_btn', 'attendancebot'),
     'style' => 'margin-top: 10px; padding: 6px 12px; cursor: pointer;'
 ]);
 
+echo html_writer::end_tag('form');
+
+// -----------------------------------------------------------------------------
+// 2️⃣ Section & Folder Mirroring Button
+// -----------------------------------------------------------------------------
+$createsectionurl = new moodle_url('/mod/attendancebot/create_section.php', ['id' => $cm->id]);
+
+echo html_writer::start_tag('form', [
+    'action' => $createsectionurl,
+    'method' => 'post',
+    'style' => 'margin-top: 20px;'
+]);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+echo html_writer::empty_tag('input', [
+    'type' => 'submit',
+    'value' => 'Create Section & Mirror Folders',
+    'style' => 'padding: 6px 12px; cursor: pointer;'
+]);
 echo html_writer::end_tag('form');
 
 echo $OUTPUT->footer();

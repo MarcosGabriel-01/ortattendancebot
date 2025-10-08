@@ -129,3 +129,7 @@ $string['text_instrucciones'] = 'Select the site, class, division, and date to c
 $string['text_mensaje_warning'] = 'Make sure the date format is correct (YYYY-MM-DD).';
 $string['create_folder_btn'] = 'Create Folder';
 $string['folder_exists'] = 'folder alredy exists';
+$string['filesystemempty'] = 'Filesystem is empty. Nothing to mirror.';
+$string['foldersmirrored'] = '{$a} folders mirrored successfully.';
+$string['nofolderscreated'] = 'No new folders were created.';
+$string['back'] = 'Back';

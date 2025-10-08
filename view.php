@@ -1,10 +1,8 @@
 <?php
-// Este código se encuentra en el archivo view.php de tu plugin attendancebot.
-
 require(__DIR__.'/../../config.php');
 require_once(__DIR__.'/lib.php');
 
-// Cargar clases necesarias
+// Dependencies
 require_once($CFG->dirroot . '/mod/attendancebot/classes/persistence/AttendancePersistance.php');
 require_once($CFG->dirroot . '/mod/attendancebot/classes/recollectors/zoomRecollector.php');
 require_once($CFG->dirroot . '/mod/attendancebot/classes/utils/StudentAttendance.php');
@@ -12,7 +10,7 @@ require_once($CFG->dirroot . '/mod/attendancebot/utilities.php');
 require_once($CFG->dirroot . '/mod/attendance/externallib.php');
 require_once($CFG->dirroot . '/mod/attendancebot/classes/task/scheduler_task.php');
 
-// Course module id.
+// Parameters
 $id = optional_param('id', 0, PARAM_INT);
 $t = optional_param('t', 0, PARAM_INT);
 
@@ -20,47 +18,109 @@ global $DB;
 
 if ($id) {
     $cm = get_coursemodule_from_id('attendancebot', $id, 0, false, MUST_EXIST);
-    $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $moduleinstance = $DB->get_record('attendancebot', array('id' => $cm->instance), '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+    $moduleinstance = $DB->get_record('attendancebot', ['id' => $cm->instance], '*', MUST_EXIST);
 } else {
-    $moduleinstance = $DB->get_record('attendancebot', array('id' => $t), '*', MUST_EXIST);
-    $course = $DB->get_record('course', array('id' => $moduleinstance->course), '*', MUST_EXIST);
+    $moduleinstance = $DB->get_record('attendancebot', ['id' => $t], '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $moduleinstance->course], '*', MUST_EXIST);
     $cm = get_coursemodule_from_instance('attendancebot', $moduleinstance->id, $course->id, false, MUST_EXIST);
 }
 
+// Security
 require_login($course, true, $cm);
-
 $modulecontext = context_module::instance($cm->id);
 
-
-$event = \mod_attendancebot\event\course_module_viewed::create(array(
+// Event
+$event = \mod_attendancebot\event\course_module_viewed::create([
     'objectid' => $moduleinstance->id,
     'context' => $modulecontext
-));
-
+]);
 $event->add_record_snapshot('course', $course);
 $event->add_record_snapshot('attendancebot', $moduleinstance);
 $event->trigger();
 
-$PAGE->set_url('/mod/attendancebot/view.php', array('id' => $cm->id));
+// Page setup
+$PAGE->set_url('/mod/attendancebot/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
+// Header
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('text_title', 'attendancebot'));
+echo $OUTPUT->box(get_string('text_descripcion_1', 'attendancebot'));
+echo $OUTPUT->box(get_string('text_descripcion_2', 'attendancebot'));
+echo $OUTPUT->box(get_string('text_instrucciones', 'attendancebot'));
+echo $OUTPUT->box(get_string('text_mensaje_warning', 'attendancebot'));
 
-// Mostrar los mensajes de introducción
-echo $OUTPUT->heading(get_string('text_title', 'mod_attendancebot'));
-echo $OUTPUT->box(get_string('text_descripcion_1', 'mod_attendancebot'));
-echo $OUTPUT->box(get_string('text_descripcion_2', 'mod_attendancebot'));
-echo $OUTPUT->box(get_string('text_instrucciones', 'mod_attendancebot'));
-echo $OUTPUT->box(get_string('text_mensaje_warning', 'mod_attendancebot'));
+// Form
+$createfolderurl = new moodle_url('/mod/attendancebot/create_folder.php');
+$sites = ['YA' => 'YA', 'BE' => 'BE'];
+$classes = ['FPR' => 'FPR', 'PNT' => 'PNT'];
+$divisions = ['A' => 'A', 'B' => 'B', 'C' => 'C', 'D' => 'D'];
 
-echo $OUTPUT->single_button(
-    new moodle_url('/mod/attendancebot/manual_run.php'),
-    get_string('runManualTask', 'attendancebot'),
-    'post'
-);
+echo html_writer::start_tag('form', [
+    'action' => $createfolderurl,
+    'method' => 'post',
+    'style' => 'margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 8px;'
+]);
+
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'id', 'value' => $cm->id]);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+
+// Selects
+echo html_writer::tag('label', 'Site:', ['for' => 'site']);
+echo html_writer::select($sites, 'site', '', ['' => 'Seleccionar sitio'], ['id' => 'site', 'required' => 'required']);
+echo html_writer::empty_tag('br');
+
+echo html_writer::tag('label', 'Class:', ['for' => 'class']);
+echo html_writer::select($classes, 'class', '', ['' => 'Seleccionar clase'], ['id' => 'class', 'required' => 'required']);
+echo html_writer::empty_tag('br');
+
+echo html_writer::tag('label', 'Division:', ['for' => 'division']);
+echo html_writer::select($divisions, 'division', '', ['' => 'Seleccionar división'], ['id' => 'division', 'required' => 'required']);
+echo html_writer::empty_tag('br');
+
+// DATE input (split into year, month, day)
+echo html_writer::tag('label', 'Year:', ['for' => 'year']);
+echo html_writer::empty_tag('input', [
+    'type' => 'number', 'name' => 'year', 'id' => 'year', 'min' => 2000, 'max' => 2099, 'required' => 'required'
+]);
+echo html_writer::empty_tag('br');
+
+echo html_writer::tag('label', 'Month:', ['for' => 'month']);
+echo html_writer::empty_tag('input', [
+    'type' => 'number', 'name' => 'month', 'id' => 'month', 'min' => 1, 'max' => 12, 'required' => 'required'
+]);
+echo html_writer::empty_tag('br');
+
+echo html_writer::tag('label', 'Day:', ['for' => 'day']);
+echo html_writer::empty_tag('input', [
+    'type' => 'number', 'name' => 'day', 'id' => 'day', 'min' => 1, 'max' => 31, 'required' => 'required'
+]);
+echo html_writer::empty_tag('br');
+
+$js = <<<JS
+document.querySelector('form[action*="create_folder.php"]').addEventListener('submit', function(e) {
+    const year = document.getElementById('year').value.padStart(4, '0');
+    const month = document.getElementById('month').value.padStart(2, '0');
+    const day = document.getElementById('day').value.padStart(2, '0');
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'date';
+    hidden.value = year + month + day;
+    this.appendChild(hidden);
+});
+JS;
+$PAGE->requires->js_amd_inline($js);
+
+
+echo html_writer::empty_tag('input', [
+    'type' => 'submit',
+    'value' => get_string('create_folder_btn', 'attendancebot'),
+    'style' => 'margin-top: 10px; padding: 6px 12px; cursor: pointer;'
+]);
+
+echo html_writer::end_tag('form');
 
 echo $OUTPUT->footer();
-?>

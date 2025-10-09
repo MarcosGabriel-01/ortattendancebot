@@ -17,9 +17,7 @@ require_login($course, true, $cm);
 
 $context = context_course::instance($course->id);
 
-/**
- * Ensure main section exists
- */
+
 function attbot_get_or_create_main_section(int $courseid): stdClass {
     global $DB;
 
@@ -43,9 +41,6 @@ function attbot_get_or_create_main_section(int $courseid): stdClass {
     return $section;
 }
 
-/**
- * Get or create division-level folder module in a section
- */
 function attbot_get_or_create_division_folder(int $courseid, string $divisionname, int $sectionnumber): array {
     global $DB;
 
@@ -111,9 +106,6 @@ function attbot_get_or_create_division_folder(int $courseid, string $divisionnam
     return ['folder' => $folder, 'cm' => $newcm];
 }
 
-/**
- * Mirror filesystem structure
- */
 function attbot_mirror_folders(int $courseid, string $basepath, context_course $context): array {
     global $DB;
 
@@ -186,7 +178,6 @@ function attbot_mirror_folders(int $courseid, string $basepath, context_course $
     return ['success' => true, 'processed' => $processed, 'renamed' => $renamed];
 }
 
-// Execute
 $result = attbot_mirror_folders($course->id, ATTBOT_BASEFOLDER, $context);
 
 echo $OUTPUT->header();

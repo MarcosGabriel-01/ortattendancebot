@@ -47,16 +47,13 @@ define('TOLERANCIA_MINIMA',15);
  */
 class mod_attendancebot_mod_form extends moodleform_mod {
 
-    //DEFINO EL FORMULARIO
     public function definition() {
       global $CFG;
 
       $mform = $this->_form;
 
-      // Adding the "general" fieldset, where all the common settings are shown.
       $mform->addElement('header', 'general', get_string('general', 'form'));
 
-      // Adding the standard "name" field.
       $mform->addElement('text', 'name', get_string('attendancebotname', 'mod_attendancebot'), array('size' => '64'));
 
       if (!empty($CFG->formatstringstriptags)) {
@@ -68,14 +65,12 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $mform->addRule('name', null, 'required', null, 'client');
       $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
-      // Adding the standard "intro" and "introformat" fields.
       if ($CFG->branch >= 29) {
           $this->standard_intro_elements();
       } else {
           $this->add_intro_editor();
       }
 
-      //CONFIGURACION DE PLUGIN
       $mform->addElement('header', 'attendancebot_settings', get_string('attendancebot_settings', 'mod_attendancebot'));
       
       //<FIELD NAME="enabled" TYPE="int" LENGTH="1" DEFAULT="1" NOTNULL="false"  SEQUENCE="false" COMMENT="Si el plugin esta prendido (true) o apagado(false)"/>
@@ -159,13 +154,11 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $clases_start[]=& $mform->createElement('select', 'clases_start_hour', ' ', $start_hours);
       $clases_start[]=& $mform->createElement('select', 'clases_start_minutes', ' ', $start_minutes);
       $mform->addGroup($clases_start, 'clases_start',get_string('form_clases_start', 'mod_attendancebot'), array(' '), false);
-      //SETEO REGLAS Y TIPOS
       $mform->addRule('clases_start', null, 'required', null, 'client');
       $mform->setType('clases_start_hour', PARAM_INT); 
       $mform->setType('clases_start_minutes', PARAM_INT);
       $mform->addHelpButton('clases_start', 'clases_start', 'mod_attendancebot');
       
-      //<FIELD NAME="clases_finish_time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp del tiempo (horas y minutos desde el comienzo del dia) del final del meeting"/>
       for ($i = 0; $i <= 23; $i++) {
         $finish_hours[$i] =  sprintf("%02d", $i);
       }
@@ -177,22 +170,18 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $clases_finish[]=& $mform->createElement('select', 'clases_finish_hour', ' ', $finish_hours);
       $clases_finish[]=& $mform->createElement('select', 'clases_finish_minutes', ' ', $finish_minutes);
       $mform->addGroup($clases_finish, 'clases_finish', get_string('form_clases_finish', 'mod_attendancebot'), array(' '), false);
-      //SETEO REGLAS Y TIPOS
       $mform->addRule('clases_finish', null, 'required', null, 'client');
       $mform->setType('clases_finish_hour', PARAM_INT); 
       $mform->setType('clases_finish_minutes', PARAM_INT);
       $mform->addHelpButton('clases_finish', 'clases_finish', 'mod_attendancebot');
 
-      //Creo los elementos hidden para enviar el start_time y finishtime
       $mform->addElement('hidden', 'clases_start_time');
       $mform->addElement('hidden', 'clases_finish_time');
       $mform->setType('clases_start_time', PARAM_INT);
       $mform->setType('clases_finish_time', PARAM_INT);
 
-      //TEXTO DE OTRAS CONFIGURACIONES DEL MODULO
       
 
-// === m5desa: camera + backuprecordings (from stable) ===
 $mform->addElement('advcheckbox', 'camera',
     get_string('camera', 'mod_attendancebot'),
     get_string('form_cameradescription_settings', 'mod_attendancebot'),
@@ -204,29 +193,23 @@ $mform->addElement('advcheckbox', 'backuprecordings',
     null, array(0,1));
 $mform->setDefault('backuprecordings', 0);
 $mform->addHelpButton('backuprecordings', 'form_backuprecordings', 'mod_attendancebot');
-// === end m5desa ===
 
 $mform->addElement('header', 'attendancebotfieldset', get_string('attendancebotfieldset', 'mod_attendancebot'));
-      // Add standard elements.
       $this->standard_coursemodule_elements();
       
-      // Add standard buttons.
       $this->add_action_buttons();
   }
 
-  //FUNCION QUE SETEA LOS DATOS ANTES DE MOSTRAR EL FORM
+
   function data_preprocessing(&$default_values) {
-// === m5desa merged defaults ===
 if (!isset($default_values['camera'])) {
     $default_values['camera'] = 0;
 }
 if (!isset($default_values['backuprecordings'])) {
     $default_values['backuprecordings'] = 0;
 }
-// === end m5desa merged defaults ===
 
           
-    //SI OBTENGO INFO LO SETEO, SINO VALORES DEFECTO
     if(isset($default_values['clases_finish_time']) && isset($default_values['clases_start_time'])){
 
       $clases_finish_time = $default_values['clases_finish_time'];
@@ -243,7 +226,6 @@ if (!isset($default_values['backuprecordings'])) {
       $minutos_finish = MINUTOS_DEFAULT;
     }
 
-    // SETEO VALORES DEFECTO PARA LAS FECHAS
     $fecha_actual = mktime(0, 0, 0, date("m"), date("d"), date("Y"));
     if ($fecha_actual >= FECHA_FIN_PRIMERO){
       $fecha_default_inicio = FECHA_INICIO_SEGUNDO;
@@ -252,7 +234,6 @@ if (!isset($default_values['backuprecordings'])) {
       $fecha_default_inicio = FECHA_INICIO_PRIMERO;
       $fecha_default_fin = FECHA_FIN_PRIMERO;
     }
-    //SETEO VALORES DEFECTO SI NO ESTAN SETEADOS
     if (!isset($default_values['enabled'])){
       $default_values['enabled'] = PLUGIN_HABILITADO_DEFAULT;
     }
@@ -262,12 +243,10 @@ if (!isset($default_values['backuprecordings'])) {
     if(!isset($default_values['late_tolerance'])){
       $default_values['late_tolerance'] = TOLERANCIA_MINIMA;
     }
-    //SETEO HORAS Y MINUTOS DEFAULT SI NO ESTAN SETEADOS
     $default_values['clases_finish_hour'] = $hora_finish;
     $default_values['clases_start_hour'] = $hora_start;
     $default_values['clases_finish_minutes'] = $minutos_finish;
     $default_values['clases_start_minutes'] = $minutos_start;
-    //SETEO FECHAS DEFAULT SI NO ESTAN SETEADOS
     if(!isset($default_values['clases_start_date'])){
       $default_values['clases_start_date'] = $fecha_default_inicio;
     }
@@ -276,11 +255,9 @@ if (!isset($default_values['backuprecordings'])) {
     }         
   }
   
-  //FUNCION QUE VALIDA LOS DATOS INGRESADOS EN EL FORM
   function validation($data, $files) {
     $errors = parent::validation($data, $files);
 
-    //VALIDACION QUE LOS DATOS NO SEAN NULL
     if(!isset($data['enabled'])){
       $errors['enabled'] = get_string('error_enabled', 'mod_attendancebot');
     }
@@ -309,7 +286,6 @@ if (!isset($default_values['backuprecordings'])) {
       $errors['clases_finish_date'] = get_string('error_clases_finish_date', 'mod_attendancebot');
     }
 
-    // Validar que la fecha no esta mal ordenada
     if ($data['clases_finish_date'] < $data['clases_start_date']) {
       $errors['clases_finish_date'] = get_string('error_fechafinalizacion', 'mod_attendancebot');
       $errors['clases_start_date'] = get_string('error_fechainicio', 'mod_attendancebot');
@@ -318,7 +294,6 @@ if (!isset($default_values['backuprecordings'])) {
       $errors['clases_start_date'] = get_string('error_fechainicio_igual', 'mod_attendancebot');
     }
     
-    // Validar que la las horas y minutos esten bien ordenadas
     $attendance_meet_start_time = hour_minutes_to_timestamp($data['clases_start_hour'],$data['clases_start_minutes']);
     $attendance_meet_finish_time = hour_minutes_to_timestamp($data['clases_finish_hour'],$data['clases_finish_minutes']);
     if($attendance_meet_finish_time < $attendance_meet_start_time){
@@ -329,7 +304,6 @@ if (!isset($default_values['backuprecordings'])) {
       $errors['clases_start'] = get_string('error_horaminutos_comienzo_igual', 'mod_attendancebot');
     }
 
-    // WARNINGS si desactiva la tolerancia, o desactiva el plugin
     if($data['late_tolerance'] == 0){
       \core\notification::warning(get_string('warning_late_tolerance', 'mod_attendancebot'));
     }
@@ -340,7 +314,6 @@ if (!isset($default_values['backuprecordings'])) {
     return $errors;
   }
 
-  //FUNCION QUE SETEA LOS DATOS DESPUES DE ENVIAR EL FROM
   public function data_postprocessing($data) {
 
     if($data){

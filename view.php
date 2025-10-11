@@ -52,17 +52,16 @@ echo $OUTPUT->box(get_string('text_descripcion_1', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_descripcion_2', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_instrucciones', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_mensaje_warning', 'attendancebot'));
-
 // -----------------------------------------------------------------------------
-// 1️⃣ Create Filesystem Form
+// 1️⃣ Create Folders Form (submit to create_folders.php)
 // -----------------------------------------------------------------------------
-$createfilesystemurl = new moodle_url('/mod/attendancebot/create_filesystem.php');
+$createfoldersurl = new moodle_url('/mod/attendancebot/create_folders.php'); // Changed here
 $sites = ['YA' => 'YA', 'BE' => 'BE'];
 $classes = ['FPR' => 'FPR', 'PNT' => 'PNT'];
 $divisions = ['A' => 'A', 'B' => 'B', 'C' => 'C', 'D' => 'D'];
 
 echo html_writer::start_tag('form', [
-    'action' => $createfilesystemurl,
+    'action' => $createfoldersurl,
     'method' => 'post',
     'style' => 'margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 8px;'
 ]);
@@ -98,10 +97,15 @@ echo html_writer::empty_tag('br');
 
 // Hidden date field via JS
 $js = <<<JS
-document.querySelector('form[action*="create_filesystem.php"]').addEventListener('submit', function(e) {
-    const year = document.getElementById('year').value.padStart(4, '0');
-    const month = document.getElementById('month').value.padStart(2, '0');
-    const day = document.getElementById('day').value.padStart(2, '0');
+document.querySelector('form[action*="create_folders.php"]').addEventListener('submit', function(e) {
+    function pad(num, size) {
+        let s = num.toString();
+        while (s.length < size) s = "0" + s;
+        return s;
+    }
+    const year = pad(document.getElementById('year').value, 4);
+    const month = pad(document.getElementById('month').value, 2);
+    const day = pad(document.getElementById('day').value, 2);
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = 'date';
@@ -120,7 +124,7 @@ echo html_writer::empty_tag('input', [
 echo html_writer::end_tag('form');
 
 // -----------------------------------------------------------------------------
-// 2️⃣ Section & Folder Mirroring Button
+// 2️⃣ Section & Folder Mirroring Button (unchanged)
 // -----------------------------------------------------------------------------
 $createsectionurl = new moodle_url('/mod/attendancebot/create_section.php', ['id' => $cm->id]);
 

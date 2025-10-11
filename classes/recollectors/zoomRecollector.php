@@ -42,9 +42,9 @@ class zoomRecollector extends BaseRecollector  {
 
             $students = array_merge($students, $participants['students']);
             $teachers = array_merge($teachers, $participants['teachers']);
-            //if ($studentsInMeeting!= null){
-            //    $students = array_merge($students,$studentsInMeeting);
-            //}
+            if ($studentsInMeeting!= null){
+                $students = array_merge($students,$studentsInMeeting);
+            }
         }
         return ['students' => $students, 'teachers' => $teachers];
     }
@@ -58,7 +58,7 @@ class zoomRecollector extends BaseRecollector  {
             $attendanceData = $this->getAttendanceData($meetingIds[0]);
         }
 
-        //$cameraOnUserIds = $this->getUsersWithCameraOn($meetingIds); 
+        $cameraOnUserIds = $this->getUsersWithCameraOn($meetingIds); 
 
         if ($checkCamera) {
             $cameraOnUserIds = $this->getUsersWithCameraOn($meetingIds);
@@ -71,7 +71,7 @@ class zoomRecollector extends BaseRecollector  {
         foreach ($attendanceData as $participant){
             $userId = $participant->userid;
             $hasVideo = !$checkCamera || in_array($userId, $cameraOnUserIds);
-            //$hasVideo = in_array($participant->userid, $cameraOnUserIds);
+            $hasVideo = in_array($participant->userid, $cameraOnUserIds);
             if (RoleUtils::isTeacher($userId, $this->courseId))  {
 
                 $teachers[] = new TeacherAttendance($participant, $hasVideo);

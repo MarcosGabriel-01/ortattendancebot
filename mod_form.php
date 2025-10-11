@@ -277,8 +277,8 @@ class mod_attendancebot_mod_form extends moodleform_mod {
             $default_values['min_required_minutes'] = TIEMPO_MINIMO;
         }
     }
-    if ($data->min_required_type === 'percentage') {
-        $data->min_required_minutes = null;
+    if (($default_values['required_type'] ?? TIPO_MINIMO) === 'percentage') {
+      $default_values['min_required_minutes'] = null;
     }
 
     if(!isset($default_values['camera'])){

@@ -38,6 +38,10 @@ define('HORA_FINALIZACION',23);
 define('MINUTOS_DEFAULT',0);
 define('TOLERANCIA_MINIMA',15);
 
+//new LN
+define('TIPO_MINIMO', 'percentage'); //default para min_required_type
+define('TIEMPO_MINIMO',200); //default para min_required_minutes	
+
 /**
  * Module instance settings form.
  *
@@ -83,19 +87,33 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $mform->addRule('enabled', null, 'required', null, 'client');
       $mform->addHelpButton('enabled', 'enabled', 'mod_attendancebot');
 
-      //<FIELD NAME="min_percentage" TYPE="int" LENGTH="3" NOTNULL="false" DEFAULT="75" SEQUENCE="false" COMMENT="Porcentaje minimo para estar presente"/>
+      $required_type = [
+        'percentage' => get_string('form_by_percentage', 'mod_attendancebot'),
+        'time' => get_string('form_by_minutes', 'mod_attendancebot')
+      ];
+      $mform->addElement('select', 'required_type', get_string('form_required_type', 'mod_attendancebot'), $required_type);
+      $mform->setDefault('required_type', 'percentage');
+      $mform->addHelpButton('required_type', 'required_type', 'mod_attendancebot');
+
       for ($i = 0; $i <= 100; $i++) {
         $porcentaje[$i] =  sprintf("%02d", $i) ;
       }
-      $min_percentage = array();
-      $min_percentage[]=& $mform->createElement('select','min_percentage','',$porcentaje);
-      $min_percentage[]=& $mform->createElement('static', 'min_percentage_text', '', get_string('form_min_percentage_text', 'mod_attendancebot'));
+      $min_percentage = [];
+      $min_percentage[] = $mform->createElement('select', 'min_percentage', '', $porcentaje);
+      $min_percentage[] = $mform->createElement('static', 'min_percentage_text', '', get_string('form_min_percentage_text', 'mod_attendancebot'));
       $mform->addGroup($min_percentage, 'min_percentage_group', get_string('form_percentage_settings', 'mod_attendancebot'), array(' '), false);
+      $mform->hideIf('min_percentage_group', 'required_type', 'neq', 'percentage');
 
-      $mform->setType('min_percentage', PARAM_INT);
-      $mform->addRule('min_percentage_group', null, 'required', null, 'client');
-      $mform->addHelpButton('min_percentage_group', 'min_percentage', 'mod_attendancebot');
-    
+      $minutos = [];
+      for ($i = 0; $i <= 300; $i++) {
+        $opcionesMin[$i] = sprintf("%02d", $i);
+      }
+      $min_required_minutes = [];
+      $min_required_minutes[] = $mform->createElement('select', 'min_required_minutes', '', $opcionesMin);
+      $min_required_minutes[] = $mform->createElement('static', 'min_required_minutes_text', '', get_string('form_min_required_minutes_text', 'mod_attendancebot'));
+      $mform->addGroup($min_required_minutes, 'min_required_minutes_group', get_string('form_min_required_minutes_settings', 'mod_attendancebot'), array(' '), false);
+      $mform->hideIf('min_required_minutes_group', 'required_type', 'neq', 'time');
+
       //<FIELD NAME="late_tolerance" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Tolerancia (en minutos) para saber si alguien esta tarde"/>
       for ($i = 0; $i <= 60; $i++) {
         $tolerancia[$i] ="   " .  sprintf("%02d", $i);
@@ -117,6 +135,15 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $mform->setType('recolection_platform', PARAM_TEXT);
       $mform->addRule('recolection_platform', null, 'required', null, 'client');
       $mform->addHelpButton('recolection_platform', 'recolection_platform', 'mod_attendancebot');
+
+      $mform->addElement('advcheckbox', 'camera', get_string('form_camera_settings', 'mod_attendancebot'), get_string('form_cameradescription_settings', 'mod_attendancebot'), null, [0, 1]);
+      $mform->addHelpButton('camera', 'camera', 'mod_attendancebot');
+
+      // <FIELD NAME="backuprecordings" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Si se debe respaldar recordings">
+      $mform->addElement('advcheckbox', 'backuprecordings', get_string('form_backuprecordings', 'mod_attendancebot'), get_string('form_backuprecordings_desc', 'mod_attendancebot'), null, array(0,1));
+      $mform->setDefault('backuprecordings', 0);
+      $mform->addHelpButton('backuprecordings', 'form_backuprecordings', 'mod_attendancebot');
+
 
       //<FIELD NAME="saving_platform" TYPE="text" NOTNULL="false" DEFAULT="attendance" SEQUENCE="false" COMMENT="Plataforma en donde se va a pasar la asistencia"/>
       $saving_platform = array(
@@ -159,6 +186,7 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $clases_start[]=& $mform->createElement('select', 'clases_start_hour', ' ', $start_hours);
       $clases_start[]=& $mform->createElement('select', 'clases_start_minutes', ' ', $start_minutes);
       $mform->addGroup($clases_start, 'clases_start',get_string('form_clases_start', 'mod_attendancebot'), array(' '), false);
+      
       //SETEO REGLAS Y TIPOS
       $mform->addRule('clases_start', null, 'required', null, 'client');
       $mform->setType('clases_start_hour', PARAM_INT); 
@@ -190,23 +218,7 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $mform->setType('clases_finish_time', PARAM_INT);
 
       //TEXTO DE OTRAS CONFIGURACIONES DEL MODULO
-      
-
-// === m5desa: camera + backuprecordings (from stable) ===
-$mform->addElement('advcheckbox', 'camera',
-    get_string('camera', 'mod_attendancebot'),
-    get_string('form_cameradescription_settings', 'mod_attendancebot'),
-    null, [0, 1]);
-$mform->addHelpButton('camera', 'camera', 'mod_attendancebot');
-
-$mform->addElement('advcheckbox', 'backuprecordings',
-    get_string('form_backuprecordings_desc', 'mod_attendancebot'),
-    null, array(0,1));
-$mform->setDefault('backuprecordings', 0);
-$mform->addHelpButton('backuprecordings', 'form_backuprecordings', 'mod_attendancebot');
-// === end m5desa ===
-
-$mform->addElement('header', 'attendancebotfieldset', get_string('attendancebotfieldset', 'mod_attendancebot'));
+      $mform->addElement('header', 'attendancebotfieldset', get_string('attendancebotfieldset', 'mod_attendancebot'));
       // Add standard elements.
       $this->standard_coursemodule_elements();
       
@@ -216,15 +228,6 @@ $mform->addElement('header', 'attendancebotfieldset', get_string('attendancebotf
 
   //FUNCION QUE SETEA LOS DATOS ANTES DE MOSTRAR EL FORM
   function data_preprocessing(&$default_values) {
-// === m5desa merged defaults ===
-if (!isset($default_values['camera'])) {
-    $default_values['camera'] = 0;
-}
-if (!isset($default_values['backuprecordings'])) {
-    $default_values['backuprecordings'] = 0;
-}
-// === end m5desa merged defaults ===
-
           
     //SI OBTENGO INFO LO SETEO, SINO VALORES DEFECTO
     if(isset($default_values['clases_finish_time']) && isset($default_values['clases_start_time'])){
@@ -262,6 +265,25 @@ if (!isset($default_values['backuprecordings'])) {
     if(!isset($default_values['late_tolerance'])){
       $default_values['late_tolerance'] = TOLERANCIA_MINIMA;
     }
+
+  
+    if (!isset($default_values['required_type'])) {
+      $default_values['required_type'] = TIPO_MINIMO;
+    }
+    if ($default_values['required_type'] === 'time') {
+        if (isset($default_values['min_required_minutes'])) {
+            $default_values['min_required_minutes'] = $default_values['min_required_minutes'] / 60;
+        } else {
+            $default_values['min_required_minutes'] = TIEMPO_MINIMO;
+        }
+    }
+    if (($default_values['required_type'] ?? TIPO_MINIMO) === 'percentage') {
+      $default_values['min_required_minutes'] = null;
+    }
+
+    if(!isset($default_values['camera'])){
+      $default_values['camera'] = 0; // no habilitado por defecto
+    }
     //SETEO HORAS Y MINUTOS DEFAULT SI NO ESTAN SETEADOS
     $default_values['clases_finish_hour'] = $hora_finish;
     $default_values['clases_start_hour'] = $hora_start;
@@ -273,6 +295,11 @@ if (!isset($default_values['backuprecordings'])) {
     }
     if(!isset($default_values['clases_finish_date'])){
       $default_values['clases_finish_date'] = $fecha_default_fin;         
+    }
+        if (empty($default_values['backuprecordings']))  {
+        $default_values['backuprecordings'] = 0;
+    } else {
+        $default_values['backuprecordings'] = 1;
     }         
   }
   
@@ -284,9 +311,23 @@ if (!isset($default_values['backuprecordings'])) {
     if(!isset($data['enabled'])){
       $errors['enabled'] = get_string('error_enabled', 'mod_attendancebot');
     }
+    /*
     if(!isset($data['min_percentage'])){
       $errors['min_percentage'] = get_string('error_min_percentage', 'mod_attendancebot');
     }
+    */
+    //newLN
+    if ($data['required_type'] == 'percentage' && $data['min_percentage'] === '') {
+      $errors['min_percentage_group'] = get_string('error_min_percentage', 'mod_attendancebot');
+    }
+    if ($data['required_type'] == 'time' && $data['min_required_minutes'] === '') {
+        $errors['min_required_minutes_group'] = get_string('error_min_required_minutes', 'mod_attendancebot');
+    }
+    if(!isset($data['required_type'])){
+      $errors['required_type'] = get_string('error_required_type', 'mod_attendancebot');
+    }
+    //fin
+
     if(!isset($data['late_tolerance'])){
       $errors['late_tolerance'] = get_string('error_late_tolerance', 'mod_attendancebot');
     }
@@ -350,6 +391,12 @@ if (!isset($default_values['backuprecordings'])) {
       $data->clases_start_time = $attendance_meet_start_time;
       $data->clases_finish_time = $attendance_meet_finish_time;
     }
+
+    //new LN       
+    if ($data->required_type === 'time') {
+        $data->min_required_minutes = $data->min_required_minutes * 60;
+    }
     return $data;
   }
 }
+

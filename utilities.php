@@ -126,18 +126,35 @@ function getAllInstanceByModuleName($modulename,$course_id)
     return $instancesId;
 }
 
+
+/**
+ * Obtiene un access token desde Zoom OAuth Server-to-Server
+ *
+ * @param string $clientId
+ * @param string $clientSecret
+ * @param string $accountId
+ * @return string|null access token o null si hubo error
+ */
+function getZoomToken(): string  {
+
+    $env = parse_ini_file(__DIR__ . '/.env'); 
+    if (!isset($env['ZOOM_OAUTH_TOKEN']))  {
+        throw new Exception("ZOOM_OAUTH_TOKEN no definido en .env");
+    }
+    return $env['ZOOM_OAUTH_TOKEN'];
+    
+}
+
 function getTime($time, $addedTime){
     $localDate = date('Y-m-d', $time);
     $base = strtotime($localDate . ' 00:00:00');
 
     $final = $base + $addedTime;
 
-    //debugging
-    //mtrace("DEBUG - [getTime] base: $base (" . date('Y-m-d H:i:s', $base) . ")");
-    //mtrace("DEBUG - [getTime] final: $final (" . date('Y-m-d H:i:s', $final) . ")");
     return $final;
 
-    //return $time - $time % $day + $addedTime + $threeHours;
-    //por qué siempre suma 3 horas?
     
 }
+
+
+

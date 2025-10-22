@@ -133,3 +133,4 @@ $string['filesystemempty'] = 'Filesystem is empty. Nothing to mirror.';
 $string['foldersmirrored'] = '{$a} folders mirrored successfully.';
 $string['nofolderscreated'] = 'No new folders were created.';
 $string['back'] = 'Back';
+$string['attendancebot:triggerbackup'] = 'Trigger attendance bot recording backup';

@@ -1,144 +1,113 @@
 <?php
-require(__DIR__ . '/../../config.php');
-require_once($CFG->dirroot . '/course/lib.php');
-require_once($CFG->dirroot . '/mod/folder/lib.php');
-
-define('RECORDINGS_DIR', $CFG->dataroot . '/attendancebot/recordings');
-define('SECTION_NAME', 'Clases Grabadas Bot');
-
-global $DB, $USER;
-
-$cmid = required_param('id', PARAM_INT);
-$cm = get_coursemodule_from_id('attendancebot', $cmid, 0, false, MUST_EXIST);
-$course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
-require_login($course, true, $cm);
-$context = context_course::instance($course->id);
+require_once($GLOBALS['CFG']->libdir . '/filelib.php');
+require_once($GLOBALS['CFG']->dirroot . '/course/lib.php');
+require_once($GLOBALS['CFG']->dirroot . '/mod/resource/lib.php');
 
 /**
- * Ensure main section exists.
+ * Ensures that a section named "Clases grabadas bot" exists for a given course.
+ * It will never modify section 0 (General).
  */
-function attbot_get_or_create_section($courseid): stdClass {
+function ensure_recordings_section(int $courseid, string $sectionname = 'Clases grabadas bot'): stdClass {
     global $DB;
-    if ($section = $DB->get_record('course_sections', ['course' => $courseid, 'name' => SECTION_NAME])) {
+
+    // Try to find existing section by name
+    $section = $DB->get_record('course_sections', [
+        'course' => $courseid,
+        'name'   => $sectionname
+    ]);
+
+    if ($section) {
         return $section;
     }
-    $max = (int)$DB->get_field_sql('SELECT MAX(section) FROM {course_sections} WHERE course = ?', [$courseid]);
-    $section = (object)[
-        'course' => $courseid,
-        'section' => $max + 1,
-        'name' => 'clases grabadas',
-        'summary' => '',
-        'visible' => 1,
-        'timemodified' => time()
-    ];
+
+    // Create a new section (next available non-zero index)
+    $section = new stdClass();
+    $section->course = $courseid;
+    $section->name = $sectionname;
+    $section->summary = '';
+    $section->summaryformat = FORMAT_HTML;
+    $section->visible = 1;
+    $section->timemodified = time();
+
+    $section->section = $DB->get_field_sql("
+        SELECT COALESCE(MAX(section), 0) + 1
+        FROM {course_sections}
+        WHERE course = ?
+    ", [$courseid]);
+
     $section->id = $DB->insert_record('course_sections', $section);
+
     return $section;
 }
 
 /**
- * Create or find Moodle folder resource.
+ * Uploads a single file to Moodle into the "Clases grabadas bot" section.
  */
-function attbot_get_or_create_folder($courseid, $sectionid, $foldername): array {
+function upload_to_moodle(int $courseid, string $filepath): void {
     global $DB;
-    $moduleid = $DB->get_field('modules', 'id', ['name' => 'folder']);
-    $sql = "SELECT cm.*, f.* FROM {course_modules} cm
-            JOIN {folder} f ON f.id = cm.instance
-            WHERE cm.course = ? AND cm.section = ? AND f.name = ?";
-    $record = $DB->get_record_sql($sql, [$courseid, $sectionid, $foldername]);
-    if ($record) {
-        return ['folder' => (object)$record, 'cm' => (object)$record];
+
+    $sectionname = 'Clases grabadas bot';
+    $section = ensure_recordings_section($courseid, $sectionname);
+    $sectionid = $section->id;
+
+    $filename = basename($filepath);
+    $basename = pathinfo($filename, PATHINFO_FILENAME);
+
+    // -----------------------------
+    // Duplicate detection
+    // -----------------------------
+    $existing = $DB->get_records_sql("
+        SELECT r.id
+        FROM {resource} r
+        JOIN {course_modules} cm ON cm.instance = r.id
+        WHERE r.course = ? AND r.name = ? AND cm.section = ?
+    ", [$courseid, $basename, $sectionid]);
+
+    if (!empty($existing)) {
+        throw new Exception("Duplicate detected: '$filename' already exists in section '$sectionname'.");
     }
 
-    $folder = (object)[
+    // -----------------------------
+    // Create resource
+    // -----------------------------
+    $resource = (object)[
         'course' => $courseid,
-        'name' => $foldername,
-        'intro' => 'Auto-created folder',
+        'name' => $basename,
+        'intro' => '',
         'introformat' => FORMAT_HTML,
-        'revision' => 1,
-        'timemodified' => time()
+        'timemodified' => time(),
     ];
-    $folder->id = $DB->insert_record('folder', $folder);
+    $resource->id = $DB->insert_record('resource', $resource);
 
+    // -----------------------------
+    // Create course module
+    // -----------------------------
+    $moduleid = $DB->get_field('modules', 'id', ['name' => 'resource'], MUST_EXIST);
     $cm = (object)[
         'course' => $courseid,
         'module' => $moduleid,
-        'instance' => $folder->id,
-        'section' => $sectionid,
-        'visible' => 1
+        'instance' => $resource->id,
+        'visible' => 1,
     ];
     $cmid = add_course_module($cm);
-    course_add_cm_to_section($courseid, $cmid, $sectionid);
-    $cmrec = $DB->get_record('course_modules', ['id' => $cmid]);
 
-    return ['folder' => $folder, 'cm' => $cmrec];
-}
+    // ✅ Associate module to section (no need for set_coursemodule_section)
+    course_add_cm_to_section($courseid, $cmid, $section->section);
 
-/**
- * Upload file to folder resource.
- */
-function upload_mp4_to_folder(int $cmid, string $filepath): bool {
-    global $DB;
-
-    // Get course module and folder
-    $cm = get_coursemodule_from_id('folder', $cmid, 0, false, MUST_EXIST);
-    $folder = $DB->get_record('folder', ['id' => $cm->instance], '*', MUST_EXIST);
-    $modcontext = context_module::instance($cm->id);
-
-    // Ensure revision exists
-    if (empty($folder->revision)) {
-        $folder->revision = 1;
-    }
-
+    // -----------------------------
+    // Upload file to resource
+    // -----------------------------
+    $context = context_module::instance($cmid);
     $fs = get_file_storage();
-    $filename = basename($filepath);
 
-    // Delete previous file if exists
-    $existing = $fs->get_file($modcontext->id, 'mod_folder', 'content', $folder->revision, '/', $filename);
-    if ($existing) {
-        $existing->delete();
-    }
-
-    // Create the file inside the correct filearea & revision
-    $file_record = [
-        'contextid' => $modcontext->id,
-        'component' => 'mod_folder',
+    $fs->create_file_from_pathname([
+        'contextid' => $context->id,
+        'component' => 'mod_resource',
         'filearea'  => 'content',
-        'itemid'    => $folder->revision,
+        'itemid'    => 0,
         'filepath'  => '/',
         'filename'  => $filename
-    ];
+    ], $filepath);
 
-    $fs->create_file_from_pathname($file_record, $filepath);
-
-    // Increment revision and update folder
-    $folder->revision++;
-    $folder->timemodified = time();
-    $DB->update_record('folder', $folder);
-
-    return true;
+    echo "✅ Uploaded '$filename' to section '$sectionname' in course ID $courseid\n";
 }
-
-
-/**
- * Mirror all recordings.
- */
-function attbot_mirror_recordings($courseid, $sectionid) {
-    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(RECORDINGS_DIR));
-    foreach ($it as $file) {
-        if ($file->isFile() && pathinfo($file, PATHINFO_EXTENSION) === 'mp4') {
-            $relpath = str_replace(RECORDINGS_DIR . '/', '', dirname($file));
-            $foldername = str_replace('/', ' - ', $relpath);
-            $pair = attbot_get_or_create_folder($courseid, $sectionid, $foldername);
-            $context = context_module::instance($pair['cm']->id);
-            upload_mp4_to_folder($context, $pair['folder'], $file);
-        }
-    }
-}
-
-// --- MAIN EXECUTION ---
-$section = attbot_get_or_create_section($course->id);
-attbot_mirror_recordings($course->id, $section->section);
-
-echo $OUTPUT->header();
-echo $OUTPUT->notification('✅ Recordings mirrored successfully.', 'notifysuccess');
-echo $OUTPUT->footer();

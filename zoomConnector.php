@@ -23,7 +23,7 @@ function zoom_api_get($endpoint, $token) {
     return json_decode($res, true);
 }
 
-function zoom_download_file($url, $filename, $token, $dir) {
+function download_file($url, $filename, $token, $dir) {
     $target = rtrim($dir, '/') . '/' . basename($filename);
     $fp = fopen($target, 'w+');
     $ch = curl_init($url);

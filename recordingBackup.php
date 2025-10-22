@@ -14,7 +14,7 @@ define('RECORDINGS_DIR', $CFG->dataroot . '/attendancebot/recordings');
 function recording_backup_run(int $courseid): void {
     //hardcoded mp4 and filename
     $url = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-    $filename = 'BE_FPR_C_' . date('Ymd') . '.mp4';
+    $filename = 'BE_DB1_A_' . date('Ymd') . '.mp4';
 
     try {
         $tmp_file = download_video($url,$filename);

@@ -50,10 +50,8 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('text_title', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_descripcion_1', 'attendancebot'));
 echo $OUTPUT->box(get_string('text_descripcion_2', 'attendancebot'));
-echo $OUTPUT->box(get_string('text_instrucciones', 'attendancebot'));
-echo $OUTPUT->box(get_string('text_mensaje_warning', 'attendancebot'));
 
-$courseid = $COURSE->id; // current course
+$courseid = $COURSE->id;
 
 $triggerurl = new moodle_url('/mod/attendancebot/trigger_backup.php', ['courseid' => $courseid]);
 
@@ -61,7 +59,7 @@ echo html_writer::start_div('attendancebot-trigger-backup');
 echo html_writer::link(
     $triggerurl,
     'Run Recording Backup',
-    ['class' => 'btn btn-primary'] // Bootstrap button class
+    ['class' => 'btn btn-primary']
 );
 echo html_writer::end_div();
 

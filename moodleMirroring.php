@@ -3,14 +3,10 @@ require_once($GLOBALS['CFG']->libdir . '/filelib.php');
 require_once($GLOBALS['CFG']->dirroot . '/course/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/mod/resource/lib.php');
 
-/**
- * Ensures that a section named "Clases grabadas bot" exists for a given course.
- * It will never modify section 0 (General).
- */
+
 function ensure_recordings_section(int $courseid, string $sectionname = 'Clases grabadas bot'): stdClass {
     global $DB;
 
-    // Try to find existing section by name
     $section = $DB->get_record('course_sections', [
         'course' => $courseid,
         'name'   => $sectionname
@@ -19,8 +15,6 @@ function ensure_recordings_section(int $courseid, string $sectionname = 'Clases 
     if ($section) {
         return $section;
     }
-
-    // Create a new section (next available non-zero index)
     $section = new stdClass();
     $section->course = $courseid;
     $section->name = $sectionname;
@@ -40,9 +34,6 @@ function ensure_recordings_section(int $courseid, string $sectionname = 'Clases 
     return $section;
 }
 
-/**
- * Uploads a single file to Moodle into the "Clases grabadas bot" section.
- */
 function upload_to_moodle(int $courseid, string $filepath): void {
     global $DB;
 
@@ -53,9 +44,6 @@ function upload_to_moodle(int $courseid, string $filepath): void {
     $filename = basename($filepath);
     $basename = pathinfo($filename, PATHINFO_FILENAME);
 
-    // -----------------------------
-    // Duplicate detection
-    // -----------------------------
     $existing = $DB->get_records_sql("
         SELECT r.id
         FROM {resource} r
@@ -67,9 +55,6 @@ function upload_to_moodle(int $courseid, string $filepath): void {
         throw new Exception("Duplicate detected: '$filename' already exists in section '$sectionname'.");
     }
 
-    // -----------------------------
-    // Create resource
-    // -----------------------------
     $resource = (object)[
         'course' => $courseid,
         'name' => $basename,
@@ -79,9 +64,6 @@ function upload_to_moodle(int $courseid, string $filepath): void {
     ];
     $resource->id = $DB->insert_record('resource', $resource);
 
-    // -----------------------------
-    // Create course module
-    // -----------------------------
     $moduleid = $DB->get_field('modules', 'id', ['name' => 'resource'], MUST_EXIST);
     $cm = (object)[
         'course' => $courseid,
@@ -91,12 +73,8 @@ function upload_to_moodle(int $courseid, string $filepath): void {
     ];
     $cmid = add_course_module($cm);
 
-    // ✅ Associate module to section (no need for set_coursemodule_section)
     course_add_cm_to_section($courseid, $cmid, $section->section);
 
-    // -----------------------------
-    // Upload file to resource
-    // -----------------------------
     $context = context_module::instance($cmid);
     $fs = get_file_storage();
 

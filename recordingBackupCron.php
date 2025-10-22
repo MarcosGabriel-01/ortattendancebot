@@ -1,8 +1,7 @@
 <?php
-require_once(__DIR__ . '/recordingBackup.php');  // Orchestrator
-require_once(__DIR__ . '/courseQueue.php');      // Queue manager
+require_once(__DIR__ . '/recordingBackup.php');
+require_once(__DIR__ . '/courseQueue.php');
 
-// Get next 5 courses from the queue
 $processingCourses = pop_next_courses(5);
 
 if (!empty($processingCourses)) {

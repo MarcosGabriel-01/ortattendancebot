@@ -1,38 +1,47 @@
 <?php
-function normalize_file_name(string $raw_name): string {
+function normalize_file_name(string $raw_name): array {
     $name = trim($raw_name);
     $name = str_replace('_', '-', $name);
 
-    $name_date = separateName($name);
+    [$name_without_date, $date] = extract_name_and_date($name);
 
-    if (is_special_name($name_date[0])) {
-        return special_handler($name_date[0], $name_date[1]);
+    if (is_special_name($name_without_date)) {
+        $folder_path = handle_special_name($name_without_date, $date);
     } else {
-        return normal_handler($name_date[0], $name_date[1]);
+        $folder_path = handle_standard_name($name_without_date, $date);
     }
+
+    return [
+        'name' => $name_without_date,
+        'date' => $date,
+        'path' => $folder_path
+    ];
 }
 
-function separateName(string $name): array {
+function is_special_name(string $name_without_date): bool {
+    return !preg_match('/^(YA|BE)-[A-Z0-9]+-[A-Z0-9]+$/i', $name_without_date);
+}
+
+function extract_name_and_date(string $name): array {
     $parts = explode('-', $name);
     $date = '';
+
     if (!empty($parts) && preg_match('/^\d{8}$/', end($parts))) {
         $date = array_pop($parts);
     }
-    $name_part = implode('-', $parts);
-    return [$name_part, $date];
+
+    $name_without_date = implode('-', $parts);
+    $name_without_date = trim(preg_replace('/\s+/', '-', $name_without_date));
+
+    return [$name_without_date, $date];
 }
 
-function is_special_name(string $name): bool {
-    return !preg_match('/^(YA|BE)-[A-Z0-9]+-[A-Z0-9]+$/i', $name);
-}
-
-function special_handler(string $name, string $date): string {
-    $folder_name = strtolower(str_replace(' ', '-', $name));
+function handle_special_name(string $name_without_date, string $date): string {
+    $folder_name = str_replace(' ', '-', $name_without_date);
     return $folder_name . '/' . $date;
 }
 
-function normal_handler(string $name, string $date): string {
-    $parts = explode('-', $name);
-    $folder_path = implode('/', $parts);
-    return $folder_path . '/' . $date;
+function handle_standard_name(string $name_without_date, string $date): string {
+    $folder_path = implode('/', explode('-', strtoupper($name_without_date))) . '/' . $date;
+    return $folder_path;
 }

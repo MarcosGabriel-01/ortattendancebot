@@ -1,8 +1,8 @@
 <?php
 require_once($GLOBALS['CFG']->libdir . '/filelib.php');
 require_once($GLOBALS['CFG']->dirroot . '/course/lib.php');
+require_once($GLOBALS['CFG']->dirroot . '/mod/folder/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/mod/resource/lib.php');
-
 
 function ensure_recordings_section(int $courseid, string $sectionname = 'Clases grabadas bot'): stdClass {
     global $DB;
@@ -15,6 +15,7 @@ function ensure_recordings_section(int $courseid, string $sectionname = 'Clases 
     if ($section) {
         return $section;
     }
+
     $section = new stdClass();
     $section->course = $courseid;
     $section->name = $sectionname;
@@ -30,11 +31,10 @@ function ensure_recordings_section(int $courseid, string $sectionname = 'Clases 
     ", [$courseid]);
 
     $section->id = $DB->insert_record('course_sections', $section);
-
     return $section;
 }
 
-function upload_to_moodle(int $courseid, string $filepath): void {
+function upload_to_moodle(int $courseid, string $filepath, array $file_data): void {
     global $DB;
 
     $sectionname = 'Clases grabadas bot';
@@ -42,50 +42,58 @@ function upload_to_moodle(int $courseid, string $filepath): void {
     $sectionid = $section->id;
 
     $filename = basename($filepath);
-    $basename = pathinfo($filename, PATHINFO_FILENAME);
+    $basefolder = $file_data['name'];
+    $datefolder = $file_data['date'];
 
-    $existing = $DB->get_records_sql("
-        SELECT r.id
-        FROM {resource} r
-        JOIN {course_modules} cm ON cm.instance = r.id
-        WHERE r.course = ? AND r.name = ? AND cm.section = ?
-    ", [$courseid, $basename, $sectionid]);
+    $folder = $DB->get_record('folder', [
+        'course' => $courseid,
+        'name' => $basefolder
+    ]);
 
-    if (!empty($existing)) {
-        throw new Exception("Duplicate detected: '$filename' already exists in section '$sectionname'.");
+    if (!$folder) {
+        $folder = (object)[
+            'course' => $courseid,
+            'name' => $basefolder,
+            'intro' => '',
+            'introformat' => FORMAT_HTML,
+            'timemodified' => time()
+        ];
+        $folder->id = $DB->insert_record('folder', $folder);
+
+        $moduleid = $DB->get_field('modules', 'id', ['name' => 'folder'], MUST_EXIST);
+        $cm = (object)[
+            'course' => $courseid,
+            'module' => $moduleid,
+            'instance' => $folder->id,
+            'visible' => 1
+        ];
+        $cmid = add_course_module($cm);
+        course_add_cm_to_section($courseid, $cmid, $section->section);
+    } else {
+        $cmid = $DB->get_field('course_modules', 'id', [
+            'instance' => $folder->id,
+            'module' => $DB->get_field('modules', 'id', ['name' => 'folder'])
+        ]);
     }
-
-    $resource = (object)[
-        'course' => $courseid,
-        'name' => $basename,
-        'intro' => '',
-        'introformat' => FORMAT_HTML,
-        'timemodified' => time(),
-    ];
-    $resource->id = $DB->insert_record('resource', $resource);
-
-    $moduleid = $DB->get_field('modules', 'id', ['name' => 'resource'], MUST_EXIST);
-    $cm = (object)[
-        'course' => $courseid,
-        'module' => $moduleid,
-        'instance' => $resource->id,
-        'visible' => 1,
-    ];
-    $cmid = add_course_module($cm);
-
-    course_add_cm_to_section($courseid, $cmid, $section->section);
 
     $context = context_module::instance($cmid);
     $fs = get_file_storage();
 
+    if ($fs->file_exists($context->id, 'mod_folder', 'content', 0, "/{$datefolder}/", $filename)) {
+        echo "⚠️ Skipped duplicate: {$filename} already exists in {$basefolder}/{$datefolder}\n";
+        return;
+    }
+
+    $filepath_in_folder = "/{$datefolder}/";
+
     $fs->create_file_from_pathname([
         'contextid' => $context->id,
-        'component' => 'mod_resource',
+        'component' => 'mod_folder',
         'filearea'  => 'content',
         'itemid'    => 0,
-        'filepath'  => '/',
+        'filepath'  => $filepath_in_folder,
         'filename'  => $filename
     ], $filepath);
 
-    echo "✅ Uploaded '$filename' to section '$sectionname' in course ID $courseid\n";
+    echo "✅ Uploaded '{$filename}' to '{$sectionname}/{$basefolder}/{$datefolder}' (course ID {$courseid})\n";
 }

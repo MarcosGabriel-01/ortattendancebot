@@ -43,22 +43,5 @@ function xmldb_attendancebot_upgrade($oldversion) {
     // You will also have to create the db/install.xml file by using the XMLDB Editor.
     // Documentation for the XMLDB Editor can be found at {@link https://docs.moodle.org/dev/XMLDB_editor}.
 
-    
-    if ($oldversion < 2025092201) {
-        $table = new xmldb_table('attendancebot');
-
-        $field = new xmldb_field('camera', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        $field = new xmldb_field('backuprecordings', XMLDB_TYPE_INTEGER, '1', null, null, null, '0');
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        upgrade_mod_savepoint(true, 2025092201, 'attendancebot');
-    }
-
     return true;
 }

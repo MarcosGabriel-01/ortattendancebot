@@ -1,6 +1,31 @@
 <?php
-// version.php merged by m5desa merge tool
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Plugin version and other meta-data are defined here.
+ *
+ * @package     mod_attendancebot
+ * @copyright   2024 Your Name <you@example.com>
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 $plugin->component = 'mod_attendancebot';
-$plugin->version = 2024051101;
+$plugin->release = '3.1.1';
+$plugin->version = 2024051100;
 $plugin->requires = 2022112800;
-$plugin->release = 'm5desa';
+$plugin->maturity = MATURITY_ALPHA;

@@ -51,36 +51,25 @@ function attendancebot_supports($feature) {
  * @return int The id of the newly inserted record.
  */
 function attendancebot_add_instance($moduleinstance, $mform = null) {
-
-// m5desa: normalize checkboxes camera/backuprecordings
-if (isset($moduleinstance->camera)) {
-    $moduleinstance->camera = !empty($moduleinstance->camera) ? 1 : 0;
-}
-if (isset($moduleinstance->backuprecordings)) {
-    $moduleinstance->backuprecordings = !empty($moduleinstance->backuprecordings) ? 1 : 0;
-}
-
     global $DB;
 
     $course_id = $moduleinstance->course;
     $attendance_id = obtener_module_id("attendance");
     $attendancebot_id = obtener_module_id("attendancebot");
-    
-    $cantidad_attendance = obtener_cantidad_instancias_plugin($course_id,$attendance_id);
-    $cantidad_attendacebot = obtener_cantidad_instancias_plugin($course_id,$attendancebot_id);
-    
-  	//Validamos que si no existe una instancia de Attendance -> Falle o si ya existe el AttendanceBot Instalado
-    if ($cantidad_attendance == 0){
-      throw new moodle_exception('pluginmissingfromcourse','mod_attendancebot', '', 'attendance',null);
-    }elseif($cantidad_attendacebot > 1){
-      throw new moodle_exception('pluginalredyoncourse','mod_attendancebot','','attendacebot',null);
+
+    $cantidad_attendance = obtener_cantidad_instancias_plugin($course_id, $attendance_id);
+    $cantidad_attendacebot = obtener_cantidad_instancias_plugin($course_id, $attendancebot_id);
+
+    if ($cantidad_attendance == 0) {
+        throw new moodle_exception('pluginmissingfromcourse','mod_attendancebot', '', 'attendance', null);
+    } elseif ($cantidad_attendacebot > 1) {
+        throw new moodle_exception('pluginalredyoncourse','mod_attendancebot','','attendacebot', null);
     }
-  
+
     $moduleinstance->timecreated = time();
+    $moduleinstance->backuprecordings = !empty($moduleinstance->backuprecordings) ? 1 : 0;
 
-    $id = $DB->insert_record('attendancebot', $moduleinstance);
-
-    return $id;
+    return $DB->insert_record('attendancebot', $moduleinstance);
 }
 
 /**
@@ -95,12 +84,14 @@ if (isset($moduleinstance->backuprecordings)) {
  */
 function attendancebot_update_instance($moduleinstance, $mform = null) {
     global $DB;
-    
+
     $moduleinstance->timemodified = time();
     $moduleinstance->id = $moduleinstance->instance;
+    $moduleinstance->backuprecordings = !empty($moduleinstance->backuprecordings) ? 1 : 0;
 
     return $DB->update_record('attendancebot', $moduleinstance);
 }
+
 
 /**
  * Removes an instance of the mod_attendancebot from the database.

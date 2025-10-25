@@ -144,6 +144,12 @@ class mod_attendancebot_mod_form extends moodleform_mod {
       $mform->setDefault('backuprecordings', 0);
       $mform->addHelpButton('backuprecordings', 'form_backuprecordings', 'mod_attendancebot');
 
+      //<FIELD NAME="delete_source" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="" COMMENT="El proceso de backup debe borrar el video en el cloud"/>
+      $mform->addElement('advcheckbox', 'delete_source', get_string('form_delete_source', 'mod_attendancebot'), get_string('form_delete_source_desc', 'mod_attendancebot'), null, array(0,1));
+      $mform->disabledIf('delete_source', 'backuprecordings', 'neq', 1);
+      $mform->setDefault('delete_source', 0);
+      $mform->addHelpButton('delete_source', 'form_delete_source', 'mod_attendancebot');
+
 
       //<FIELD NAME="saving_platform" TYPE="text" NOTNULL="false" DEFAULT="attendance" SEQUENCE="false" COMMENT="Plataforma en donde se va a pasar la asistencia"/>
       $saving_platform = array(
@@ -381,7 +387,6 @@ class mod_attendancebot_mod_form extends moodleform_mod {
     return $errors;
   }
 
-  //FUNCION QUE SETEA LOS DATOS DESPUES DE ENVIAR EL FROM
   public function data_postprocessing($data) {
 
     if($data){
@@ -390,12 +395,16 @@ class mod_attendancebot_mod_form extends moodleform_mod {
 
       $data->clases_start_time = $attendance_meet_start_time;
       $data->clases_finish_time = $attendance_meet_finish_time;
-    }
+    }  
 
-    //new LN       
     if ($data->required_type === 'time') {
         $data->min_required_minutes = $data->min_required_minutes * 60;
     }
+
+    if (empty($data->backuprecordings)) {
+        $data->delete_source = 0;
+    }
+
     return $data;
   }
 }

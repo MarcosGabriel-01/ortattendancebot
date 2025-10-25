@@ -5,7 +5,7 @@ require_login();
 $courseid = required_param('courseid', PARAM_INT);
 $context = context_course::instance($courseid);
 
-$PAGE->set_url('/mod/attendancebot/trigger_backup.php', ['courseid' => $courseid]);
+$PAGE->set_url('/mod/attendancebot/triggerBackup.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title('Run Recording Backup');
 $PAGE->set_heading('Run Recording Backup');

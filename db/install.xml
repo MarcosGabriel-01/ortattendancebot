@@ -1,38 +1,114 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/attendancebot/db" VERSION="20240511" COMMENT="XMLDB file for Moodle mod_attendancebot"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
->
+<XMLDB PATH="mod/ortattendancebot/db" VERSION="20251029" COMMENT="XMLDB file for Moodle mod_ortattendancebot" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>
-    <TABLE NAME="attendancebot" COMMENT="Stores the attendancebot activity module instances.">
+    <TABLE NAME="ortattendancebot" COMMENT="Stores ortattendancebot activity instances">
       <FIELDS>
-        <!-- Moodle Activity default -->
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of the course this activity is part of."/>
-        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The name of the activity module instance"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of when the instance was added to the course."/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of when the instance was last modified."/>
-        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Activity description."/>
-        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The format of the intro field."/>
-        <!-- Plugin configuration -->
-        <FIELD NAME="enabled" TYPE="int" LENGTH="4" DEFAULT="1" NOTNULL="true"  SEQUENCE="false" COMMENT="Si el plugin esta prendido (true) o apagado(false)"/>
-        <FIELD NAME="required_type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="percentage" COLLATION="utf8mb4_unicode_ci"/>
-        <FIELD NAME="min_required_minutes" TYPE="int" LENGTH="11" NOTNULL="false" DEFAULT="0"/>
-        <FIELD NAME="min_percentage" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="75" SEQUENCE="false" COMMENT="Porcentaje minimo para estar presente"/>
-        <FIELD NAME="late_tolerance" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Tolerancia (en minutos) para saber si alguien esta tarde"/>
-        <FIELD NAME="recolection_platform" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Plataforma en el que se va a recolectar la informacion"/>
-        <FIELD NAME="camera" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Detección de cámara para considerar presente al alumno"/>
-        <FIELD NAME="saving_platform" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Plataforma en donde se va a pasar la asistencia"/>
-        <FIELD NAME="clases_start_date" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp del comienzo de clases"/>
-        <FIELD NAME="clases_finish_date" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp de la finalizacion de clases"/>
-        <FIELD NAME="clases_start_time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp del tiempo (horas y minutos desde el comienzo del dia) del comienzo del meeting"/>
-        <FIELD NAME="clases_finish_time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp del tiempo (horas y minutos desde el comienzo del dia) del final del meeting"/>
-        <FIELD NAME="backuprecordings" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="0" COMMENT="Si se deben respaldar recordings de Zoom" />
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course ID"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Activity name"/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Description"/>
+        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        
+        <!-- Configuration -->
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" DEFAULT="1" NOTNULL="true" SEQUENCE="false" COMMENT="Plugin enabled"/>
+        <FIELD NAME="camera_required" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Camera must be on"/>
+        <FIELD NAME="camera_threshold" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="60" SEQUENCE="false" COMMENT="Camera on % required"/>
+        <FIELD NAME="min_percentage" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="75" SEQUENCE="false" COMMENT="Min attendance %"/>
+        <FIELD NAME="late_tolerance" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="15" SEQUENCE="false" COMMENT="Late tolerance minutes"/>
+        
+        <!-- Date/Time ranges -->
+        <FIELD NAME="start_date" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course start date"/>
+        <FIELD NAME="end_date" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course end date"/>
+        <FIELD NAME="start_time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Daily start time seconds"/>
+        <FIELD NAME="end_time" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Daily end time seconds"/>
+        
+        <!-- Recording Backup Configuration -->
+        <FIELD NAME="backup_recordings" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Enable recording backup"/>
+        <FIELD NAME="recordings_path" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Local path for recordings"/>
+        <FIELD NAME="delete_source" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Delete from Zoom after backup"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="fk_course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_course" UNIQUE="false" FIELDS="course"/>
+        <INDEX NAME="idx_enabled" UNIQUE="false" FIELDS="enabled"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="ortattendancebot_queue" COMMENT="Queue of meetings to process">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="attendancebotid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meeting_id" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meeting_date" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="processed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timeprocessed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_ortattendancebot" TYPE="foreign" FIELDS="attendancebotid" REFTABLE="ortattendancebot" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_processed" UNIQUE="false" FIELDS="processed"/>
+        <INDEX NAME="idx_meeting" UNIQUE="false" FIELDS="meeting_id"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="ortattendancebot_backup_queue" COMMENT="Queue of recordings to backup">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="attendancebotid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meeting_id" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meeting_name" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Zoom meeting topic"/>
+        <FIELD NAME="recording_id" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="Zoom recording ID"/>
+        <FIELD NAME="recording_url" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Download URL"/>
+        <FIELD NAME="file_size" TYPE="int" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="File size in bytes"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Retry attempts"/>
+        <FIELD NAME="backed_up" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Backup complete"/>
+        <FIELD NAME="last_attempt" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Last attempt timestamp"/>
+        <FIELD NAME="error_message" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Last error"/>
+        <FIELD NAME="local_path" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Local file path"/>
+        <FIELD NAME="moodle_file_id" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Moodle file ID"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_ortattendancebot" TYPE="foreign" FIELDS="attendancebotid" REFTABLE="ortattendancebot" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_attendancebotid" UNIQUE="false" FIELDS="attendancebotid"/>
+        <INDEX NAME="idx_backed_up" UNIQUE="false" FIELDS="backed_up"/>
+        <INDEX NAME="idx_meeting_id" UNIQUE="false" FIELDS="meeting_id"/>
+        <INDEX NAME="idx_attempts" UNIQUE="false" FIELDS="attempts"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="ortattendancebot_cleanup_queue" COMMENT="Failed Zoom deletions to retry">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="attendancebotid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meeting_id" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="recording_id" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="deleted" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="error_message" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_ortattendancebot" TYPE="foreign" FIELDS="attendancebotid" REFTABLE="ortattendancebot" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="idx_deleted" UNIQUE="false" FIELDS="deleted"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

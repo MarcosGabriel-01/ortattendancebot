@@ -1,13 +1,22 @@
 <?php
-$tasks = array(
-    array(
-        'classname' => 'mod_attendancebot\task\scheduler_task', // The class that defines the task to be executed.
-        'blocking' => 0, // Set to 1 to make this task block other tasks from running simultaneously.
-        'minute' => '0', // Run at the 0th minute.
-        'hour' => '1', // Run at 1am.
-        'day' => '*', // Run every day of the month.
-        'month' => '*', // Run every month.
-        'dayofweek' => '*', // Run every day of the week.
-    ),
-);
-?>
+/**
+ * Task definitions for mod_ortattendancebot
+ *
+ * @package     mod_ortattendancebot
+ * @copyright   2025 Your Organization
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+$tasks = [
+    [
+        'classname' => 'mod_ortattendancebot\task\scheduler_task',
+        'blocking'  => 0,
+        'minute'    => '0',
+        'hour'      => '1',
+        'day'       => '*',
+        'month'     => '*',
+        'dayofweek' => '*',
+    ],
+];

@@ -1,38 +1,24 @@
 <?php
-// This file is part of Moodle - https://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
-
 /**
- * Library of interface functions and constants.
+ * Library of interface functions and constants
  *
- * @package     mod_attendancebot
- * @copyright   2024 Your Name <you@example.com>
+ * @package     mod_ortattendancebot
+ * @copyright   2025 Your Organization
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- require_once(__DIR__ . '/utilities.php');
+defined('MOODLE_INTERNAL') || die();
 
 /**
- * Return if the plugin supports $feature.
- *
- * @param string $feature Constant representing the feature.
- * @return true | null True if the feature is supported, null otherwise.
+ * Supported features
  */
-function attendancebot_supports($feature) {
-    switch ($feature) {
+function ortattendancebot_supports($feature) {
+    switch($feature) {
         case FEATURE_MOD_INTRO:
+            return true;
+        case FEATURE_BACKUP_MOODLE2:
+            return true;
+        case FEATURE_SHOW_DESCRIPTION:
             return true;
         default:
             return null;
@@ -40,74 +26,86 @@ function attendancebot_supports($feature) {
 }
 
 /**
- * Saves a new instance of the mod_attendancebot into the database.
- *
- * Given an object containing all the necessary data, (defined by the form
- * in mod_form.php) this function will create a new instance and return the id
- * number of the instance.
- *
- * @param object $moduleinstance An object from the form.
- * @param mod_attendancebot_mod_form $mform The form.
- * @return int The id of the newly inserted record.
+ * Saves a new instance of ortattendancebot
  */
-function attendancebot_add_instance($moduleinstance, $mform = null) {
+function ortattendancebot_add_instance($data, $mform = null) {
     global $DB;
-
-    $course_id = $moduleinstance->course;
-    $attendance_id = obtener_module_id("attendance");
-    $attendancebot_id = obtener_module_id("attendancebot");
-
-    $cantidad_attendance = obtener_cantidad_instancias_plugin($course_id, $attendance_id);
-    $cantidad_attendacebot = obtener_cantidad_instancias_plugin($course_id, $attendancebot_id);
-
-    if ($cantidad_attendance == 0) {
-        throw new moodle_exception('pluginmissingfromcourse','mod_attendancebot', '', 'attendance', null);
-    } elseif ($cantidad_attendacebot > 1) {
-        throw new moodle_exception('pluginalredyoncourse','mod_attendancebot','','attendacebot', null);
+    
+    $data->timecreated = time();
+    $data->timemodified = time();
+    
+    // Set default values for new backup fields
+    if (!isset($data->backup_recordings)) {
+        $data->backup_recordings = 0;
     }
-
-    $moduleinstance->timecreated = time();
-    $moduleinstance->backuprecordings = !empty($moduleinstance->backuprecordings) ? 1 : 0;
-
-    return $DB->insert_record('attendancebot', $moduleinstance);
+    if (!isset($data->delete_source)) {
+        $data->delete_source = 0;
+    }
+    if (!isset($data->recordings_path)) {
+        global $CFG;
+        $data->recordings_path = $CFG->dataroot . '/ortattendancebot_recordings';
+    }
+    
+    return $DB->insert_record('ortattendancebot', $data);
 }
 
 /**
- * Updates an instance of the mod_attendancebot in the database.
- *
- * Given an object containing all the necessary data (defined in mod_form.php),
- * this function will update an existing instance with new data.
- *
- * @param object $moduleinstance An object from the form in mod_form.php.
- * @param mod_attendancebot_mod_form $mform The form.
- * @return bool True if successful, false otherwise.
+ * Updates an instance of ortattendancebot
  */
-function attendancebot_update_instance($moduleinstance, $mform = null) {
+function ortattendancebot_update_instance($data, $mform = null) {
     global $DB;
-
-    $moduleinstance->timemodified = time();
-    $moduleinstance->id = $moduleinstance->instance;
-    $moduleinstance->backuprecordings = !empty($moduleinstance->backuprecordings) ? 1 : 0;
-
-    return $DB->update_record('attendancebot', $moduleinstance);
+    
+    $data->timemodified = time();
+    $data->id = $data->instance;
+    
+    return $DB->update_record('ortattendancebot', $data);
 }
 
-
 /**
- * Removes an instance of the mod_attendancebot from the database.
- *
- * @param int $id Id of the module instance.
- * @return bool True if successful, false on failure.
+ * Deletes an instance of ortattendancebot
  */
-function attendancebot_delete_instance($id) {
+function ortattendancebot_delete_instance($id) {
     global $DB;
-
-    $exists = $DB->get_record('attendancebot', array('id' => $id));
-    if (!$exists) {
+    
+    if (!$ortattendancebot = $DB->get_record('ortattendancebot', ['id' => $id])) {
         return false;
     }
-
-    $DB->delete_records('attendancebot', array('id' => $id));
-
+    
+    // Delete related queue entries
+    $DB->delete_records('ortattendancebot_queue', ['attendancebotid' => $id]);
+    $DB->delete_records('ortattendancebot_backup_queue', ['attendancebotid' => $id]);
+    $DB->delete_records('ortattendancebot_cleanup_queue', ['attendancebotid' => $id]);
+    
+    // Delete the instance
+    $DB->delete_records('ortattendancebot', ['id' => $id]);
+    
     return true;
+}
+
+/**
+ * Get module instance by module name and course
+ */
+function ortattendancebot_get_module_instance($modulename, $courseid) {
+    global $DB;
+    
+    $module = $DB->get_record('modules', ['name' => $modulename], 'id', MUST_EXIST);
+    
+    $sql = "SELECT cm.instance 
+            FROM {course_modules} cm
+            WHERE cm.course = :courseid 
+            AND cm.module = :moduleid 
+            AND cm.deletioninprogress = 0
+            ORDER BY cm.id DESC
+            LIMIT 1";
+    
+    $result = $DB->get_record_sql($sql, ['courseid' => $courseid, 'moduleid' => $module->id]);
+    
+    return $result ? $result->instance : null;
+}
+
+/**
+ * Convert hours and minutes to seconds
+ */
+function ortattendancebot_time_to_seconds($hours, $minutes) {
+    return ($hours * 3600) + ($minutes * 60);
 }

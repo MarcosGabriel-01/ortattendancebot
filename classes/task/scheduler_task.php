@@ -1,59 +1,145 @@
 <?php
-namespace mod_attendancebot\task;
-require_once($CFG->dirroot . '/mod/attendancebot/classes/task/meeting_processer_task.php');
-require_once($CFG->dirroot . '/mod/attendancebot/utilities.php');
+/**
+ * Scheduled task that runs at 1 AM to queue meetings
+ *
+ * @package     mod_ortattendancebot
+ * @copyright   2025 Your Organization
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
+namespace mod_ortattendancebot\task;
+
+defined('MOODLE_INTERNAL') || die();
 
 class scheduler_task extends \core\task\scheduled_task {
+    
     public function get_name() {
-        return get_string('scheduler_task_name', 'mod_attendancebot');
+        return get_string('scheduler_task', 'mod_ortattendancebot');
     }
-
+    
     public function execute() {
-        global $DB;
-        mtrace('Empezando ejecución de programador de tareas de asistencia automatica');
-
-        $installations = $this->get_installations();
+        global $CFG, $DB;
+        
+        // Load required library
+        require_once($CFG->dirroot . '/mod/ortattendancebot/lib.php');
+        
+        mtrace('=== Attendance Bot Scheduler Started ===');
+        
+        // Get all active attendancebot instances
+        $installations = $this->get_active_installations();
+        mtrace('Found ' . count($installations) . ' active installations');
+        
         foreach ($installations as $installation) {
-            $courseid = $installation->course;
-            $installationid = $installation->id;
-            mtrace('Curso obtenido : ' . $courseid);
-            mtrace('Installation id obtenido : ' . $installationid);
-            mtrace('Creando tarea AdHoc para el curso: ' . $courseid);
-
-            $this->schedule_adhoc_task($courseid, $installationid);
+            mtrace("Processing installation: {$installation->name} (Course: {$installation->course})");
+            
+            try {
+                $this->queue_meetings($installation);
+                $this->schedule_processor($installation);
+            } catch (\Exception $e) {
+                mtrace('ERROR: ' . $e->getMessage());
+                continue;
+            }
         }
-
-        mtrace('La tarea programador de tareas de asistencia automatica ha sido completada');
+        
+        mtrace('=== Attendance Bot Scheduler Completed ===');
     }
-
-    private function schedule_adhoc_task($courseid, $installationid) {
-        $task = new meeting_processer_task();
-        $task->set_custom_data(['courseid' => $courseid,'installationid' => $installationid]);
-        \core\task\manager::queue_adhoc_task($task);
-    }
-
-    private function get_installations() {
+    
+    /**
+     * Get all active attendancebot installations
+     */
+    private function get_active_installations() {
         global $DB;
-
-        $module_id = obtener_module_id('attendancebot');
-        mtrace('Module de attencandebot: '. $module_id);
         
-        $sql = "
-        SELECT * FROM mdl_attendancebot 
-        WHERE clases_start_date <= :current_time1 
-        AND clases_finish_date >= :current_time2
-        AND enabled = :enabled
-        AND id in (SELECT instance FROM mdl_course_modules
-                   WHERE module = :module_id 
-                   AND deletioninprogress = :deletioninprogress)";
-                   
-        $params = ['current_time1' => time(), 'current_time2' => time(),'enabled' => '1','module_id' => $module_id,'deletioninprogress' => '0'];
+        $now = time();
         
-        // Las instalaciones que se encuentran en el rango de fechas de inicio y fin, ademas de que estén habilitadas
-        $plugin_instalation = array_values($DB->get_records_sql($sql, $params));
-        mtrace('Numero de instalaciones activas encontradas'. count($plugin_instalation));
-        mtrace('Time actual: '. time());
-        return $plugin_instalation;
+        $sql = "SELECT ab.* 
+                FROM {ortattendancebot} ab
+                JOIN {course_modules} cm ON cm.instance = ab.id
+                JOIN {modules} m ON m.id = cm.module AND m.name = 'ortattendancebot'
+                WHERE ab.enabled = 1 
+                AND ab.start_date <= :now1 
+                AND ab.end_date >= :now2
+                AND cm.deletioninprogress = 0";
+        
+        return $DB->get_records_sql($sql, ['now1' => $now, 'now2' => $now]);
+    }
+    
+    /**
+     * Queue meetings from the entire configured date range for processing
+     * This allows catching up on all meetings since start_date, not just yesterday
+     */
+    private function queue_meetings($installation, $retroactive = false) {
+        global $CFG, $DB;
+        
+        // Determine date range to fetch
+        if ($retroactive) {
+            // Retroactive mode: fetch ALL meetings from start_date to end_date
+            $from_date = date('Y-m-d', $installation->start_date);
+            $to_date = date('Y-m-d', min($installation->end_date, time())); // Don't go beyond today
+            mtrace("  RETROACTIVE MODE: Fetching meetings from $from_date to $to_date");
+        } else {
+            // Regular mode: fetch only yesterday's meetings (for daily cron)
+            $yesterday = strtotime('yesterday');
+            $from_date = date('Y-m-d', $yesterday);
+            $to_date = $from_date;
+            mtrace("  Fetching meetings for date: $from_date");
+        }
+        
+        // Get Zoom API client
+        require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/zoom_client.php');
+        $client = new \mod_ortattendancebot\api\zoom_client();
+        
+        // Fetch meetings from API using date range
+        // The Zoom API supports from/to parameters for efficient range queries
+        $meetings = $client->get_meetings_by_date_range($from_date, $to_date);
+        mtrace("  Found " . count($meetings) . " meetings in date range");
+        
+        $queued_count = 0;
+        $skipped_count = 0;
+        
+        foreach ($meetings as $meeting) {
+            // Check if meeting is within time range (time of day filter)
+            $meeting_time = strtotime($meeting['start_time']);
+            $meeting_seconds = $meeting_time % 86400; // Seconds from start of day
+            
+            if ($meeting_seconds >= $installation->start_time && 
+                $meeting_seconds <= $installation->end_time) {
+                
+                // Queue this meeting if not already queued
+                $exists = $DB->record_exists('ortattendancebot_queue', [
+                    'attendancebotid' => $installation->id,
+                    'meeting_id' => $meeting['id']
+                ]);
+                
+                if (!$exists) {
+                    $DB->insert_record('ortattendancebot_queue', [
+                        'attendancebotid' => $installation->id,
+                        'meeting_id' => $meeting['id'],
+                        'meeting_date' => $meeting_time,
+                        'processed' => 0,
+                        'timecreated' => time()
+                    ]);
+                    mtrace("    Queued meeting: {$meeting['id']} (" . date('Y-m-d H:i', $meeting_time) . ")");
+                    $queued_count++;
+                } else {
+                    $skipped_count++;
+                }
+            }
+        }
+        
+        mtrace("  Summary: Queued $queued_count new meetings, skipped $skipped_count already queued");
+    }
+    
+    /**
+     * Schedule adhoc task to process queued meetings
+     */
+    private function schedule_processor($installation) {
+        $task = new \mod_ortattendancebot\task\meeting_processor_task();
+        $task->set_custom_data([
+            'attendancebotid' => $installation->id,
+            'courseid' => $installation->course
+        ]);
+        \core\task\manager::queue_adhoc_task($task);
+        mtrace("  Scheduled processor task");
     }
 }

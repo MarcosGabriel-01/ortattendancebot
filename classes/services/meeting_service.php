@@ -17,8 +17,8 @@ class meeting_service {
     
     public function __construct() {
         global $CFG;
-        require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/zoom_client.php');
-        $this->api_client = new \mod_ortattendancebot\api\zoom_client();
+        require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/client_connection.php');
+        $this->api_client = \mod_ortattendancebot\api\client_connection::get_client();
     }
     
     /**

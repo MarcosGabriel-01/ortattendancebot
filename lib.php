@@ -46,7 +46,12 @@ function ortattendancebot_add_instance($data, $mform = null) {
         $data->recordings_path = $CFG->dataroot . '/ortattendancebot_recordings';
     }
     
-    return $DB->insert_record('ortattendancebot', $data);
+    $id = $DB->insert_record('ortattendancebot', $data);
+    
+    // Queue the retroactive fetch task
+    ortattendancebot_queue_retroactive_task($id, $data->course);
+    
+    return $id;
 }
 
 /**
@@ -58,7 +63,36 @@ function ortattendancebot_update_instance($data, $mform = null) {
     $data->timemodified = time();
     $data->id = $data->instance;
     
-    return $DB->update_record('ortattendancebot', $data);
+    $result = $DB->update_record('ortattendancebot', $data);
+    
+    // Queue the retroactive fetch task
+    ortattendancebot_queue_retroactive_task($data->id, $data->course);
+    
+    return $result;
+}
+
+/**
+ * Queue retroactive fetch task
+ */
+function ortattendancebot_queue_retroactive_task($attendancebotid, $courseid) {
+    global $DB;
+    
+    // Get fresh records from database
+    $attendancebot = $DB->get_record('ortattendancebot', ['id' => $attendancebotid], '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+    
+    // Create the adhoc task
+    $task = new \mod_ortattendancebot\task\fetch_retroactive_task();
+    
+    // Prepare data to pass to the task
+    $taskdata = new \stdClass();
+    $taskdata->attendancebotid = $attendancebot->id;
+    $taskdata->courseid = $course->id;
+    
+    $task->set_custom_data($taskdata);
+    
+    // Queue it for execution
+    \core\task\manager::queue_adhoc_task($task);
 }
 
 /**

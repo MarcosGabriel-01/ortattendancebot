@@ -13,7 +13,6 @@ defined('MOODLE_INTERNAL') || die();
 
 class meeting_processor_task extends \core\task\adhoc_task {
     
-    const ATTENDANCE_BATCH_SIZE = 25;
     const BACKUP_BATCH_SIZE = 5;
     
     public function get_name() {
@@ -32,7 +31,7 @@ class meeting_processor_task extends \core\task\adhoc_task {
         // Get configuration
         $config = $DB->get_record('ortattendancebot', ['id' => $attendancebotid], '*', MUST_EXIST);
         
-        // Step 1: Process attendance queue (limit 25)
+        // Step 1: Process attendance queue (all items)
         $this->process_attendance_queue($config, $courseid, $attendancebotid);
         
         // Step 2: Process backup queue (limit 5) - only if backup enabled
@@ -51,14 +50,14 @@ class meeting_processor_task extends \core\task\adhoc_task {
         
         mtrace("\n--- ATTENDANCE QUEUE ---");
         
-        // Get unprocessed meetings (limit 25)
+        // Get all unprocessed meetings
         $queued = $DB->get_records('ortattendancebot_queue', [
             'attendancebotid' => $attendancebotid,
             'processed' => 0
-        ], 'meeting_date ASC', '*', 0, self::ATTENDANCE_BATCH_SIZE);
+        ], 'meeting_date ASC');
         
         $count = count($queued);
-        mtrace("Processing $count attendance items (max " . self::ATTENDANCE_BATCH_SIZE . ")");
+        mtrace("Processing $count attendance items");
         
         if ($count === 0) {
             mtrace("No attendance items to process");
@@ -121,9 +120,9 @@ class meeting_processor_task extends \core\task\adhoc_task {
             return;
         }
         
-        // Initialize Zoom client
-        require_once(__DIR__ . '/../api/zoom_client.php');
-        $zoom_client = new \mod_ortattendancebot\api\zoom_client();
+        // Initialize API client
+        require_once(__DIR__ . '/../api/client_connection.php');
+        $api_client = \mod_ortattendancebot\api\client_connection::get_client();
         
         // Initialize backup processor
         require_once(__DIR__ . '/../backup/recording_backup.php');
@@ -131,7 +130,7 @@ class meeting_processor_task extends \core\task\adhoc_task {
             $courseid,
             $config->recordings_path,
             $config->delete_source,
-            $zoom_client
+            $api_client
         );
         
         foreach ($queued as $backup_item) {
@@ -201,7 +200,7 @@ class meeting_processor_task extends \core\task\adhoc_task {
         $backup = new \stdClass();
         $backup->attendancebotid = $attendancebotid;
         $backup->meeting_id = $queue_item->meeting_id;
-        $backup->meeting_name = ''; // Will be fetched from Zoom API
+        $backup->meeting_name = ''; // Will be fetched from API
         $backup->attempts = 0;
         $backup->backed_up = 0;
         $backup->timecreated = time();

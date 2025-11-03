@@ -22,11 +22,11 @@ class recording_backup {
     /** @var string Base path for recordings */
     private $base_path;
     
-    /** @var bool Delete from Zoom after backup */
+    /** @var bool Delete from source after backup */
     private $delete_source;
     
-    /** @var object Zoom API client */
-    private $zoom_client;
+    /** @var object API client (Zoom/Meet/Mock) */
+    private $api_client;
     
     /**
      * Constructor
@@ -34,13 +34,13 @@ class recording_backup {
      * @param int $courseid
      * @param string $base_path
      * @param bool $delete_source
-     * @param object $zoom_client
+     * @param object $api_client API client instance
      */
-    public function __construct($courseid, $base_path, $delete_source, $zoom_client) {
+    public function __construct($courseid, $base_path, $delete_source, $api_client) {
         $this->courseid = $courseid;
         $this->base_path = rtrim($base_path, '/');
         $this->delete_source = $delete_source;
-        $this->zoom_client = $zoom_client;
+        $this->api_client = $api_client;
     }
     
     /**
@@ -65,9 +65,9 @@ class recording_backup {
         ];
         
         try {
-            // Step 1: Get recording metadata from Zoom if not already available
+            // Step 1: Get recording metadata if not already available
             if (empty($backup_item->recording_url)) {
-                $recordings = $this->zoom_client->get_recording_metadata($backup_item->meeting_id);
+                $recordings = $this->api_client->get_recording_metadata($backup_item->meeting_id);
                 
                 if (empty($recordings)) {
                     throw new \Exception("No recordings found for meeting: " . $backup_item->meeting_id);
@@ -122,10 +122,10 @@ class recording_backup {
             
             $result['moodle_file_id'] = $moodle_file_id;
             
-            // Step 6: Delete from Zoom if enabled
+            // Step 6: Delete from source if enabled
             if ($this->delete_source) {
                 try {
-                    $this->zoom_client->delete_recording($backup_item->meeting_id, $backup_item->recording_id);
+                    $this->api_client->delete_recording($backup_item->meeting_id, $backup_item->recording_id);
                 } catch (\Exception $e) {
                     // Log but don't fail - add to cleanup queue instead
                     $this->add_to_cleanup_queue($backup_item, $e->getMessage());

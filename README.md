@@ -60,14 +60,14 @@ Procesa automáticamente la asistencia de reuniones Zoom y respalda grabaciones 
 ## Ejemplos de Análisis de Nombres de Reunión
 
 **Basado en Código:**
-```
+
 "Matemáticas BE-MATB [asc-be-11b]" → /recordings/BE/MAT/B/20251015/
-```
+
 
 **Basado en Texto:**
-```
+
 "Tendencias - CURSO A [din-be-21a]" → /recordings/Tendencias/A/20251015/
-```
+
 
 ## Procesamiento de Cola
 
@@ -77,11 +77,11 @@ Procesa automáticamente la asistencia de reuniones Zoom y respalda grabaciones 
 
 ## Endpoints de API Requeridos
 
-```
+
 GET /users/{email}/meetings?from=YYYY-MM-DD&to=YYYY-MM-DD
 GET /past_meetings/{meeting_id}/participants
 GET /meetings/{meeting_id}/recordings
-```
+
 
 ## Tablas de Base de Datos
 

@@ -21,8 +21,8 @@ class meeting_processor {
         $this->config = $config;
         $this->courseid = $courseid;
         
-        require_once(__DIR__ . '/../api/zoom_client.php');
-        $this->api_client = new \mod_ortattendancebot\api\zoom_client();
+        require_once(__DIR__ . '/../api/client_connection.php');
+        $this->api_client = \mod_ortattendancebot\api\client_connection::get_client();
     }
     
     /**

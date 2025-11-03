@@ -85,12 +85,11 @@ class scheduler_task extends \core\task\scheduled_task {
             mtrace("  Fetching meetings for date: $from_date");
         }
         
-        // Get Zoom API client
-        require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/zoom_client.php');
-        $client = new \mod_ortattendancebot\api\zoom_client();
+        // Get API client
+        require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/client_connection.php');
+        $client = \mod_ortattendancebot\api\client_connection::get_client();
         
         // Fetch meetings from API using date range
-        // The Zoom API supports from/to parameters for efficient range queries
         $meetings = $client->get_meetings_by_date_range($from_date, $to_date);
         mtrace("  Found " . count($meetings) . " meetings in date range");
         

@@ -22,12 +22,7 @@ class client_connection {
     const PROVIDER_MEET = 'meet';
     const PROVIDER_MOCK = 'mock';
     
-    /**
-     * Get the appropriate client based on configuration
-     * 
-     * @return client_interface
-     * @throws \Exception
-     */
+    
     public static function get_client() {
     $provider = get_config('mod_ortattendancebot', 'video_provider') ?: self::PROVIDER_ZOOM;
 
@@ -49,13 +44,7 @@ class client_connection {
         }
     }
 
-
-    /**
-     * Get client by provider type
-     * 
-     * @param string $provider Provider constant (PROVIDER_ZOOM, PROVIDER_MEET, PROVIDER_MOCK)
-     * @return client_interface
-     */
+    
     public static function get_client_by_provider($provider) {
         switch ($provider) {
             case self::PROVIDER_ZOOM:
@@ -72,23 +61,17 @@ class client_connection {
         }
     }
     
-    /**
-     * Force Zoom client
-     */
+    
     public static function get_zoom_client() {
         return new zoom_client();
     }
     
-    /**
-     * Force Google Meet client
-     */
+    
     public static function get_meet_client() {
         return new meet_client();
     }
     
-    /**
-     * Force mock client
-     */
+    
     public static function get_mock_client() {
         return new mock_client();
     }

@@ -27,7 +27,6 @@ $PAGE->set_context($context);
 
 echo $OUTPUT->header();
 
-// Handle actions
 if ($action && confirm_sesskey()) {
     require_capability('moodle/course:manageactivities', $context);
     
@@ -80,7 +79,7 @@ if ($action && confirm_sesskey()) {
                 break;
         }
         
-        // Display result
+        
         if ($result) {
             echo '<h3>' . ucwords(str_replace('_', ' ', $result['action'])) . '</h3>';
             
@@ -144,14 +143,12 @@ if ($action && confirm_sesskey()) {
     exit;
 }
 
-// Regular view
 echo $OUTPUT->heading($attendancebot->name);
 
 if ($attendancebot->intro) {
     echo $OUTPUT->box(format_module_intro('ortattendancebot', $attendancebot, $cm->id), 'generalbox');
 }
 
-// Configuration
 echo '<div class="card mb-3"><div class="card-body">';
 echo '<h4>' . get_string('view_configuration', 'mod_ortattendancebot') . '</h4>';
 echo '<p><strong>' . get_string('view_date_range', 'mod_ortattendancebot') . ':</strong> ' . userdate($attendancebot->start_date, '%Y-%m-%d') . ' to ' . userdate($attendancebot->end_date, '%Y-%m-%d') . '</p>';
@@ -159,7 +156,6 @@ echo '<p><strong>' . get_string('view_time_window', 'mod_ortattendancebot') . ':
 echo '<p><strong>' . get_string('view_status', 'mod_ortattendancebot') . ':</strong> ' . ($attendancebot->enabled ? '<span class="badge badge-success">' . get_string('status_enabled', 'mod_ortattendancebot') . '</span>' : '<span class="badge badge-secondary">' . get_string('status_disabled', 'mod_ortattendancebot') . '</span>') . '</p>';
 echo '</div></div>';
 
-// Action buttons
 if (has_capability('moodle/course:manageactivities', $context)) {
     $sesskey = sesskey();
     
@@ -183,7 +179,6 @@ if (has_capability('moodle/course:manageactivities', $context)) {
     echo '</div></div></div>';
 }
 
-// Queue display
 require_once(__DIR__ . '/classes/services/queue_service.php');
 $queue_service = new \mod_ortattendancebot\services\queue_service();
 $queue_items = $queue_service->get_all($attendancebot->id);

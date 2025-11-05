@@ -15,7 +15,7 @@ function xmldb_ortattendancebot_upgrade($oldversion) {
 
     if ($oldversion < 2025102902) {
         
-        // Define backup fields to be added to ortattendancebot table
+        
         $table = new xmldb_table('ortattendancebot');
         
         $field = new xmldb_field('backup_recordings', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'end_time');
@@ -33,7 +33,7 @@ function xmldb_ortattendancebot_upgrade($oldversion) {
             $dbman->add_field($table, $field);
         }
         
-        // Define backup_queue table
+        
         $table = new xmldb_table('ortattendancebot_backup_queue');
         
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
@@ -64,7 +64,7 @@ function xmldb_ortattendancebot_upgrade($oldversion) {
             $dbman->create_table($table);
         }
         
-        // Define cleanup_queue table
+        
         $table = new xmldb_table('ortattendancebot_cleanup_queue');
         
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);

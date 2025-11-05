@@ -14,9 +14,9 @@ if ($hassiteconfig) {
 
     if ($ADMIN->fulltree) {
 
-        // ==========================================
-        // PROVIDER SELECTION
-        // ==========================================
+        
+        
+        
         $settings->add(new admin_setting_heading(
             'ortattendancebot_provider_heading',
             html_writer::tag('div',
@@ -40,9 +40,9 @@ if ($hassiteconfig) {
             $provider_options
         ));
 
-        // ==========================================
-        // ZOOM CONFIGURATION
-        // ==========================================
+        
+        
+        
         $zoom_accountid = get_config('zoom', 'accountid');
         $zoom_clientid = get_config('zoom', 'clientid');
         $zoom_clientsecret = get_config('zoom', 'clientsecret');
@@ -77,7 +77,7 @@ if ($hassiteconfig) {
             $zoom_status
         ));
 
-        // Manual credentials fallback if mod_zoom not configured.
+        
         $settings->add(new admin_setting_configtext(
             'mod_ortattendancebot/zoom_account_id',
             get_string('zoom_account_id', 'mod_ortattendancebot'),
@@ -101,10 +101,9 @@ if ($hassiteconfig) {
             ''
         ));
 
-
-        // ==========================================
-        // MOCK API CONFIGURATION
-        // ==========================================
+        
+        
+        
         $settings->add(new admin_setting_heading(
             'ortattendancebot_mock_heading',
             html_writer::tag('div',
@@ -123,9 +122,9 @@ if ($hassiteconfig) {
             PARAM_URL
         ));
 
-        // ==========================================
-        // RECORDING BACKUP SETTINGS
-        // ==========================================
+        
+        
+        
         $settings->add(new admin_setting_heading(
             'ortattendancebot_backup_heading',
             html_writer::tag('div',

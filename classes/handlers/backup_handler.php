@@ -21,11 +21,7 @@ class backup_handler {
         $this->course = $course;
     }
     
-    /**
-     * Process backup queue
-     * 
-     * @return array Result data
-     */
+    
     public function process() {
         global $CFG;
         
@@ -37,7 +33,7 @@ class backup_handler {
             ];
         }
         
-        // Capture output
+        
         ob_start();
         
         require_once($CFG->dirroot . '/mod/ortattendancebot/classes/task/meeting_processor_task.php');

@@ -21,11 +21,7 @@ class cleanup_handler {
         $this->course = $course;
     }
     
-    /**
-     * Clear queue
-     * 
-     * @return array Result data
-     */
+    
     public function clear_queue() {
         global $CFG;
         
@@ -41,15 +37,11 @@ class cleanup_handler {
         ];
     }
     
-    /**
-     * Clear attendance sessions
-     * 
-     * @return array Result data
-     */
+    
     public function clear_attendance() {
         global $DB;
         
-        // Get attendance instance
+        
         $modules = $DB->get_record('modules', ['name' => 'attendance']);
         
         if (!$modules) {
@@ -75,7 +67,7 @@ class cleanup_handler {
         
         $attendance_id = $cm_attendance->instance;
         
-        // Get bot-created sessions
+        
         $sessions = $DB->get_records_select('attendance_sessions', 
             "attendanceid = ? AND description LIKE ?", 
             [$attendance_id, '%AttendanceBot%']

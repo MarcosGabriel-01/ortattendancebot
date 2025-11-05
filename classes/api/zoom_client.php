@@ -23,7 +23,7 @@ class zoom_client implements client_interface {
     public function __construct() {
         global $CFG;
 
-        // Check if mod_zoom is available
+        
         $this->use_mod_zoom = file_exists($CFG->dirroot . '/mod/zoom/classes/webservice.php');
 
         if ($this->use_mod_zoom) {
@@ -37,7 +37,7 @@ class zoom_client implements client_interface {
             }
         }
 
-        // Get or generate OAuth token
+        
         $this->token = $this->get_zoom_token();
 
         if (!$this->token) {
@@ -45,14 +45,7 @@ class zoom_client implements client_interface {
         }
     }
 
-    /**
-     * Obtain a Zoom OAuth token using mod_zoom credentials.
-     * Priority:
-     *   1. If mod_zoom is managing tokens, mark as such.
-     *   2. Else, generate token using clientid, clientsecret, and accountid.
-     *
-     * @return string|null
-     */
+    
     private function get_zoom_token() {
         global $CFG;
 
@@ -60,13 +53,13 @@ class zoom_client implements client_interface {
         $clientsecret = get_config('zoom', 'clientsecret');
         $accountid = get_config('zoom', 'accountid');
 
-        // If mod_zoom manages tokens internally, we just note that
+        
         if ($this->use_mod_zoom && $clientid && $clientsecret && $accountid) {
             mtrace("Using mod_zoom managed token");
             return 'mod_zoom_managed';
         }
 
-        // If credentials exist but mod_zoom is not available, fetch directly
+        
         if ($clientid && $clientsecret && $accountid) {
             $url = "https://zoom.us/oauth/token?grant_type=account_credentials&account_id={$accountid}";
             $auth = base64_encode("{$clientid}:{$clientsecret}");
@@ -95,9 +88,7 @@ class zoom_client implements client_interface {
         return null;
     }
 
-    /**
-     * Retrieve meetings for a specific date
-     */
+    
     public function get_meetings_by_date($date) {
         if ($this->use_mod_zoom) {
             return $this->webservice->get_meetings($date, $date);
@@ -106,9 +97,7 @@ class zoom_client implements client_interface {
         return $this->get_meetings_by_date_range($date, $date);
     }
 
-    /**
-     * Retrieve meetings within a date range
-     */
+    
     public function get_meetings_by_date_range($from_date, $to_date) {
         if ($this->use_mod_zoom) {
             return $this->webservice->get_meetings($from_date, $to_date);
@@ -126,9 +115,7 @@ class zoom_client implements client_interface {
         return $response['meetings'] ?? [];
     }
 
-    /**
-     * Retrieve participants of a meeting
-     */
+    
     public function get_meeting_participants($meeting_uuid) {
         if ($this->use_mod_zoom) {
             return $this->webservice->get_meeting_participants($meeting_uuid, false);
@@ -140,9 +127,7 @@ class zoom_client implements client_interface {
         return $response['participants'] ?? [];
     }
 
-    /**
-     * Retrieve recording metadata
-     */
+    
     public function get_recording_metadata($meeting_id, $user_id = null) {
         if ($this->use_mod_zoom && $user_id) {
             $recordings = $this->webservice->get_user_recordings(
@@ -166,9 +151,7 @@ class zoom_client implements client_interface {
         }
     }
 
-    /**
-     * Retrieve meeting details
-     */
+    
     public function get_meeting_info($meeting_id) {
         if ($this->use_mod_zoom) {
             return $this->webservice->get_meeting_webinar_info($meeting_id, false);
@@ -178,9 +161,7 @@ class zoom_client implements client_interface {
         return $this->make_request($url);
     }
 
-    /**
-     * Download multiple recordings in batch
-     */
+    
     public function download_recordings_batch($recordings, $base_path) {
         $results = [];
 
@@ -210,9 +191,7 @@ class zoom_client implements client_interface {
         return $results;
     }
 
-    /**
-     * Download a single recording file
-     */
+    
     private function download_single_recording($download_url, $base_path, $filename = null) {
         if (!file_exists($base_path)) {
             mkdir($base_path, 0775, true);
@@ -251,9 +230,7 @@ class zoom_client implements client_interface {
         return $filepath;
     }
 
-    /**
-     * Delete multiple recordings
-     */
+    
     public function delete_recordings($recordings) {
         if (!isset($recordings[0])) {
             $recordings = [$recordings];
@@ -284,9 +261,7 @@ class zoom_client implements client_interface {
         return $results;
     }
 
-    /**
-     * Make HTTP request with retry logic
-     */
+    
     private function make_request($url, $method = 'GET', $data = null) {
         $max_retries = 3;
         $retry_delays = [60, 300, 900];

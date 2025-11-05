@@ -31,26 +31,22 @@ class meeting_handler {
         $this->queue_service = new \mod_ortattendancebot\services\queue_service();
     }
     
-    /**
-     * Fetch all meetings in configured date range
-     * 
-     * @return array Result data for template
-     */
+    
     public function fetch_retroactive() {
         $from_date = date('Y-m-d', $this->attendancebot->start_date);
         $to_date = date('Y-m-d', min($this->attendancebot->end_date, time()));
         
-        // Fetch from API
+        
         $fetch_result = $this->meeting_service->fetch_meetings($from_date, $to_date);
         
-        // Filter by time window
+        
         $filter_result = $this->meeting_service->filter_by_time(
             $fetch_result['meetings'],
             $this->attendancebot->start_time,
             $this->attendancebot->end_time
         );
         
-        // Add to queue
+        
         $queue_result = $this->queue_service->add_meetings(
             $this->attendancebot->id,
             $filter_result['valid']
@@ -69,26 +65,22 @@ class meeting_handler {
         ];
     }
     
-    /**
-     * Fetch yesterday's meetings
-     * 
-     * @return array Result data
-     */
+    
     public function fetch_yesterday() {
         $yesterday = strtotime('yesterday');
         $date = date('Y-m-d', $yesterday);
         
-        // Fetch from API
+        
         $fetch_result = $this->meeting_service->fetch_meetings($date, $date);
         
-        // Filter by time window
+        
         $filter_result = $this->meeting_service->filter_by_time(
             $fetch_result['meetings'],
             $this->attendancebot->start_time,
             $this->attendancebot->end_time
         );
         
-        // Add to queue
+        
         $queue_result = $this->queue_service->add_meetings(
             $this->attendancebot->id,
             $filter_result['valid']

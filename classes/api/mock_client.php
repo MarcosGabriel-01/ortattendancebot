@@ -22,36 +22,28 @@ class mock_client implements client_interface {
         mtrace("Mock API URL: {$this->base_url}");
     }
     
-    /**
-     * Get meetings for a specific date
-     */
+    
     public function get_meetings_by_date($date) {
         $url = "{$this->base_url}/report/meetings?from={$date}&to={$date}";
         $response = $this->make_request($url);
         return $response['meetings'] ?? [];
     }
     
-    /**
-     * Get meetings for a date range
-     */
+    
     public function get_meetings_by_date_range($from_date, $to_date) {
         $url = "{$this->base_url}/report/meetings?from={$from_date}&to={$to_date}";
         $response = $this->make_request($url);
         return $response['meetings'] ?? [];
     }
     
-    /**
-     * Get participants for a specific meeting
-     */
+    
     public function get_meeting_participants($meeting_id) {
         $url = "{$this->base_url}/metrics/meetings/{$meeting_id}/participants";
         $response = $this->make_request($url);
         return $response['participants'] ?? [];
     }
     
-    /**
-     * Get recording metadata
-     */
+    
     public function get_recording_metadata($meeting_id) {
         $url = "{$this->base_url}/meetings/{$meeting_id}/recordings";
         
@@ -66,9 +58,7 @@ class mock_client implements client_interface {
         }
     }
     
-    /**
-     * Delete recordings
-     */
+    
     public function delete_recordings($recordings) {
         if (!isset($recordings[0])) {
             $recordings = [$recordings];
@@ -87,17 +77,13 @@ class mock_client implements client_interface {
         return $results;
     }
     
-    /**
-     * Get meeting information
-     */
+    
     public function get_meeting_info($meeting_id) {
         $url = "{$this->base_url}/meetings/{$meeting_id}";
         return $this->make_request($url);
     }
     
-    /**
-     * Make HTTP request to mock API
-     */
+    
     private function make_request($url, $method = 'GET', $data = null) {
         $ch = curl_init();
         
@@ -128,7 +114,7 @@ class mock_client implements client_interface {
             throw new \Exception("Mock API HTTP error $http_code: $response");
         }
         
-        // DELETE requests return 204 No Content
+        
         if ($method === 'DELETE' && $http_code === 204) {
             return [];
         }

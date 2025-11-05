@@ -25,15 +25,13 @@ class meeting_processor {
         $this->api_client = \mod_ortattendancebot\api\client_connection::get_client();
     }
     
-    /**
-     * Process a single meeting
-     */
+    
     public function process_meeting($meeting_id) {
         global $CFG, $DB;
         
         mtrace("Fetching participants for meeting: $meeting_id");
         
-        // Get participants from API
+        
         $participants = $this->api_client->get_meeting_participants($meeting_id);
         
         if (empty($participants)) {
@@ -43,14 +41,14 @@ class meeting_processor {
         
         mtrace("Found " . count($participants) . " participants");
         
-        // Get attendance instance ID
+        
         $attendance_id = $this->get_attendance_instance();
         
         if (!$attendance_id) {
             throw new \Exception("No attendance module found in course");
         }
         
-        // Get first participant to determine meeting time
+        
         $first = reset($participants);
         $meeting_start = strtotime($first['join_time']);
         $meeting_end = strtotime($first['leave_time']);
@@ -65,7 +63,7 @@ class meeting_processor {
         $meeting_duration = $meeting_end - $meeting_start;
         mtrace("Meeting duration: " . round($meeting_duration / 60) . " minutes");
         
-        // Create or find session
+        
         $session_id = $this->get_or_create_session($attendance_id, $meeting_start, $meeting_duration);
         
         if (!$session_id) {
@@ -74,10 +72,10 @@ class meeting_processor {
         
         mtrace("Using session ID: $session_id");
         
-        // Get status IDs
+        
         $statuses = $this->get_statuses($attendance_id);
         
-        // Process each participant
+        
         foreach ($participants as $participant) {
             try {
                 $this->process_participant($participant, $session_id, $meeting_start, $meeting_duration, $statuses);
@@ -87,25 +85,23 @@ class meeting_processor {
             }
         }
         
-        // Mark session as taken
+        
         $DB->set_field('attendance_sessions', 'lasttaken', time(), ['id' => $session_id]);
         $DB->set_field('attendance_sessions', 'lasttakenby', 2, ['id' => $session_id]);
         mtrace("✓ Session marked as taken");
         
-        // Mark absent students
+        
         $this->mark_absent_students($participants, $session_id, $statuses);
         mtrace("✓ Marked non-attendees as absent");
         
-        // Add to backup queue if enabled
+        
         if ($this->config->backup_recordings) {
             $this->add_to_backup_queue($meeting_id, $meeting_start);
             mtrace("✓ Added to backup queue");
         }
     }
     
-    /**
-     * Mark absent students who didn't attend
-     */
+    
     private function mark_absent_students($participants, $session_id, $statuses) {
         global $DB;
         
@@ -139,13 +135,11 @@ class meeting_processor {
         }
     }
     
-    /**
-     * Add meeting to backup queue with topic
-     */
+    
     private function add_to_backup_queue($meeting_id, $meeting_start) {
         global $DB;
         
-        // Get meeting topic
+        
         try {
             $meeting_info = $this->api_client->get_meeting_info($meeting_id);
             $topic = $meeting_info['topic'] ?? '';
@@ -164,9 +158,7 @@ class meeting_processor {
         $DB->insert_record('ortattendancebot_backup_queue', $backup);
     }
     
-    /**
-     * Process individual participant
-     */
+    
     private function process_participant($participant, $session_id, $meeting_start, $meeting_duration, $statuses) {
         global $DB;
         
@@ -177,7 +169,7 @@ class meeting_processor {
             return;
         }
         
-        // Match by email
+        
         $user = $DB->get_record('user', ['email' => $email], 'id,firstname,lastname');
         
         if (!$user) {
@@ -187,7 +179,7 @@ class meeting_processor {
         
         mtrace("  Processing: {$user->firstname} {$user->lastname} ($email)");
         
-        // Calculate attendance
+        
         $join_time = strtotime($participant['join_time']);
         $leave_time = strtotime($participant['leave_time']);
         $attended_seconds = $leave_time - $join_time;
@@ -195,22 +187,20 @@ class meeting_processor {
         
         mtrace("    Attended: " . round($attendance_percent) . "%");
         
-        // Check camera
+        
         $camera_on = $participant['camera_on'] ?? $participant['has_video'] ?? false;
         mtrace("    Camera: " . ($camera_on ? 'ON' : 'OFF'));
         
-        // Determine status
+        
         $status_id = $this->determine_status($user->id, $attendance_percent, $camera_on, $join_time, $meeting_start, $statuses);
         
-        // Save attendance
+        
         $this->save_attendance($user->id, $session_id, $status_id);
         
         mtrace("    Status: " . $this->get_status_name($status_id, $statuses));
     }
     
-    /**
-     * Determine attendance status
-     */
+    
     private function determine_status($userid, $attendance_percent, $camera_on, $join_time, $meeting_start, $statuses) {
         if ($attendance_percent < $this->config->min_percentage) {
             return $statuses['absent'];
@@ -228,9 +218,7 @@ class meeting_processor {
         return $statuses['present'];
     }
     
-    /**
-     * Save attendance log
-     */
+    
     private function save_attendance($userid, $session_id, $status_id) {
         global $DB;
         
@@ -263,9 +251,7 @@ class meeting_processor {
         }
     }
     
-    /**
-     * Get or create attendance session
-     */
+    
     private function get_or_create_session($attendance_id, $start_time, $duration) {
         global $DB;
         
@@ -312,18 +298,14 @@ class meeting_processor {
         return $DB->insert_record('attendance_sessions', $session);
     }
     
-    /**
-     * Get attendance module instance ID
-     */
+    
     private function get_attendance_instance() {
         global $DB;
         require_once(__DIR__ . '/../../lib.php');
         return ortattendancebot_get_module_instance('attendance', $this->courseid);
     }
     
-    /**
-     * Get status IDs for attendance
-     */
+    
     private function get_statuses($attendance_id) {
         global $DB;
         
@@ -352,9 +334,7 @@ class meeting_processor {
         return $statuses;
     }
     
-    /**
-     * Get status name for logging
-     */
+    
     private function get_status_name($status_id, $statuses) {
         foreach ($statuses as $name => $id) {
             if ($id == $status_id) {

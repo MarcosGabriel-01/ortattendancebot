@@ -9,9 +9,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Post installation procedure
- */
 function xmldb_ortattendancebot_install() {
     return true;
 }

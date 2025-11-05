@@ -21,13 +21,7 @@ class meeting_service {
         $this->api_client = \mod_ortattendancebot\api\client_connection::get_client();
     }
     
-    /**
-     * Fetch meetings for a date range
-     * 
-     * @param string $from_date Y-m-d format
-     * @param string $to_date Y-m-d format
-     * @return array ['meetings' => array, 'count' => int, 'api_url' => string]
-     */
+    
     public function fetch_meetings($from_date, $to_date) {
         $meetings = $this->api_client->get_meetings_by_date_range($from_date, $to_date);
         
@@ -39,14 +33,7 @@ class meeting_service {
         ];
     }
     
-    /**
-     * Filter meetings by time window
-     * 
-     * @param array $meetings
-     * @param int $start_time Seconds from midnight
-     * @param int $end_time Seconds from midnight
-     * @return array ['valid' => array, 'filtered' => int]
-     */
+    
     public function filter_by_time($meetings, $start_time, $end_time) {
         $valid = [];
         $filtered = 0;

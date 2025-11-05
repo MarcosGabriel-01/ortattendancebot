@@ -22,7 +22,7 @@ class meet_client implements client_interface {
     private $calendar_id;
     
     public function __construct() {
-        // Try to get credentials from various Google plugins
+        
         $google_config = $this->get_google_credentials();
         
         if ($google_config) {
@@ -30,7 +30,7 @@ class meet_client implements client_interface {
             $this->calendar_id = $google_config['calendar_id'];
             mtrace("Using Google credentials from: {$google_config['source']}");
         } else {
-            // Fall back to ortattendancebot's own config
+            
             $this->token = get_config('mod_ortattendancebot', 'google_oauth_token');
             $this->calendar_id = get_config('mod_ortattendancebot', 'google_calendar_id') ?: 'primary';
             mtrace("Using Google credentials from: ortattendancebot settings");
@@ -41,14 +41,9 @@ class meet_client implements client_interface {
         }
     }
     
-    /**
-     * Get Google credentials from various sources
-     * Priority: auth_googleoauth2 > local_o365 > ortattendancebot
-     * 
-     * @return array|null ['token' => string, 'calendar_id' => string, 'source' => string]
-     */
+    
     private function get_google_credentials() {
-        // Check auth_googleoauth2 (Google OAuth2 authentication)
+        
         $token = get_config('auth_googleoauth2', 'oauth_token');
         $calendar_id = get_config('auth_googleoauth2', 'calendar_id') ?: 'primary';
         
@@ -56,7 +51,7 @@ class meet_client implements client_interface {
             return ['token' => $token, 'calendar_id' => $calendar_id, 'source' => 'auth_googleoauth2'];
         }
         
-        // Check local_o365 (Microsoft/Google integration)
+        
         $token = get_config('local_o365', 'google_oauth_token');
         $calendar_id = get_config('local_o365', 'google_calendar_id') ?: 'primary';
         
@@ -67,9 +62,7 @@ class meet_client implements client_interface {
         return null;
     }
     
-    /**
-     * Get meetings for a specific date
-     */
+    
     public function get_meetings_by_date($date) {
         $time_min = $date . 'T00:00:00Z';
         $time_max = $date . 'T23:59:59Z';
@@ -85,9 +78,7 @@ class meet_client implements client_interface {
         return $this->filter_meet_events($response['items'] ?? []);
     }
     
-    /**
-     * Get meetings for a date range
-     */
+    
     public function get_meetings_by_date_range($from_date, $to_date) {
         $time_min = $from_date . 'T00:00:00Z';
         $time_max = $to_date . 'T23:59:59Z';
@@ -103,14 +94,12 @@ class meet_client implements client_interface {
         return $this->filter_meet_events($response['items'] ?? []);
     }
     
-    /**
-     * Filter events to only include Google Meet meetings
-     */
+    
     private function filter_meet_events($events) {
         $meetings = [];
         
         foreach ($events as $event) {
-            // Check if event has Google Meet conference data
+            
             if (isset($event['conferenceData']) && 
                 isset($event['conferenceData']['conferenceId'])) {
                 
@@ -129,34 +118,28 @@ class meet_client implements client_interface {
         return $meetings;
     }
     
-    /**
-     * Calculate meeting duration in minutes
-     */
+    
     private function calculate_duration($event) {
         $start = strtotime($event['start']['dateTime'] ?? $event['start']['date']);
         $end = strtotime($event['end']['dateTime'] ?? $event['end']['date']);
         return round(($end - $start) / 60);
     }
     
-    /**
-     * Get participants for a specific meeting
-     */
+    
     public function get_meeting_participants($meeting_id) {
-        // Google Meet API v2 for conference records
+        
         $url = "{$this->meet_base_url}/conferenceRecords/{$meeting_id}/participants";
         
         try {
             $response = $this->make_request($url);
             return $this->format_participants($response['participants'] ?? []);
         } catch (\Exception $e) {
-            // Fall back to calendar event attendees if Meet API fails
+            
             return $this->get_calendar_attendees($meeting_id);
         }
     }
     
-    /**
-     * Format participants to standard structure
-     */
+    
     private function format_participants($participants) {
         $formatted = [];
         
@@ -174,9 +157,7 @@ class meet_client implements client_interface {
         return $formatted;
     }
     
-    /**
-     * Calculate participant duration
-     */
+    
     private function calculate_participant_duration($participant) {
         if (isset($participant['earliestStartTime']) && isset($participant['latestEndTime'])) {
             $start = strtotime($participant['earliestStartTime']);
@@ -186,9 +167,7 @@ class meet_client implements client_interface {
         return 0;
     }
     
-    /**
-     * Get attendees from calendar event (fallback)
-     */
+    
     private function get_calendar_attendees($event_id) {
         $url = "{$this->calendar_base_url}/calendars/{$this->calendar_id}/events/{$event_id}";
         
@@ -217,11 +196,9 @@ class meet_client implements client_interface {
         }
     }
     
-    /**
-     * Get recording metadata (recordings are stored in Google Drive)
-     */
+    
     public function get_recording_metadata($meeting_id) {
-        // Search for recordings in Drive with meeting ID in name
+        
         $query = "mimeType='video/mp4' and name contains '{$meeting_id}' and trashed=false";
         $url = "{$this->drive_base_url}/files?" . http_build_query([
             'q' => $query,
@@ -240,9 +217,7 @@ class meet_client implements client_interface {
         }
     }
     
-    /**
-     * Format recordings to standard structure
-     */
+    
     private function format_recordings($files) {
         $recordings = [];
         
@@ -262,9 +237,7 @@ class meet_client implements client_interface {
         return $recordings;
     }
     
-    /**
-     * Delete recordings from Google Drive
-     */
+    
     public function delete_recordings($recordings) {
         if (!isset($recordings[0])) {
             $recordings = [$recordings];
@@ -283,23 +256,19 @@ class meet_client implements client_interface {
         return $results;
     }
     
-    /**
-     * Get meeting information
-     */
+    
     public function get_meeting_info($meeting_id) {
         $url = "{$this->meet_base_url}/conferenceRecords/{$meeting_id}";
         
         try {
             return $this->make_request($url);
         } catch (\Exception $e) {
-            // Fall back to calendar search
+            
             return $this->search_calendar_event($meeting_id);
         }
     }
     
-    /**
-     * Search for meeting in calendar events (fallback)
-     */
+    
     private function search_calendar_event($meeting_id) {
         $time_min = date('Y-m-d', strtotime('-30 days')) . 'T00:00:00Z';
         $time_max = date('Y-m-d', strtotime('+1 day')) . 'T23:59:59Z';
@@ -328,12 +297,10 @@ class meet_client implements client_interface {
         throw new \Exception("Meeting not found: $meeting_id");
     }
     
-    /**
-     * Make HTTP request with retry logic
-     */
+    
     private function make_request($url, $method = 'GET', $data = null) {
         $max_retries = 3;
-        $retry_delays = [60, 300, 900]; // 1min, 5min, 15min
+        $retry_delays = [60, 300, 900]; 
         
         for ($attempt = 0; $attempt < $max_retries; $attempt++) {
             $ch = curl_init();
@@ -364,7 +331,7 @@ class meet_client implements client_interface {
                 throw new \Exception("cURL error: $error");
             }
             
-            // Handle rate limiting with retry
+            
             if ($http_code === 429) {
                 if ($attempt < $max_retries - 1) {
                     $delay = $retry_delays[$attempt];
@@ -379,7 +346,7 @@ class meet_client implements client_interface {
                 throw new \Exception("HTTP error $http_code: $response");
             }
             
-            // DELETE requests return 204 No Content
+            
             if ($method === 'DELETE' && $http_code === 204) {
                 return [];
             }

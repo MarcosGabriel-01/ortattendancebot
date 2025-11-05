@@ -20,12 +20,12 @@ class scheduler_task extends \core\task\scheduled_task {
     public function execute() {
         global $CFG, $DB;
         
-        // Load required library
+        
         require_once($CFG->dirroot . '/mod/ortattendancebot/lib.php');
         
         mtrace('=== Attendance Bot Scheduler Started ===');
         
-        // Get all active attendancebot instances
+        
         $installations = $this->get_active_installations();
         mtrace('Found ' . count($installations) . ' active installations');
         
@@ -44,9 +44,7 @@ class scheduler_task extends \core\task\scheduled_task {
         mtrace('=== Attendance Bot Scheduler Completed ===');
     }
     
-    /**
-     * Get all active attendancebot installations
-     */
+    
     private function get_active_installations() {
         global $DB;
         
@@ -64,32 +62,29 @@ class scheduler_task extends \core\task\scheduled_task {
         return $DB->get_records_sql($sql, ['now1' => $now, 'now2' => $now]);
     }
     
-    /**
-     * Queue meetings from the entire configured date range for processing
-     * This allows catching up on all meetings since start_date, not just yesterday
-     */
+    
     private function queue_meetings($installation, $retroactive = false) {
         global $CFG, $DB;
         
-        // Determine date range to fetch
+        
         if ($retroactive) {
-            // Retroactive mode: fetch ALL meetings from start_date to end_date
+            
             $from_date = date('Y-m-d', $installation->start_date);
-            $to_date = date('Y-m-d', min($installation->end_date, time())); // Don't go beyond today
+            $to_date = date('Y-m-d', min($installation->end_date, time())); 
             mtrace("  RETROACTIVE MODE: Fetching meetings from $from_date to $to_date");
         } else {
-            // Regular mode: fetch only yesterday's meetings (for daily cron)
+            
             $yesterday = strtotime('yesterday');
             $from_date = date('Y-m-d', $yesterday);
             $to_date = $from_date;
             mtrace("  Fetching meetings for date: $from_date");
         }
         
-        // Get API client
+        
         require_once($CFG->dirroot . '/mod/ortattendancebot/classes/api/client_connection.php');
         $client = \mod_ortattendancebot\api\client_connection::get_client();
         
-        // Fetch meetings from API using date range
+        
         $meetings = $client->get_meetings_by_date_range($from_date, $to_date);
         mtrace("  Found " . count($meetings) . " meetings in date range");
         
@@ -97,14 +92,14 @@ class scheduler_task extends \core\task\scheduled_task {
         $skipped_count = 0;
         
         foreach ($meetings as $meeting) {
-            // Check if meeting is within time range (time of day filter)
+            
             $meeting_time = strtotime($meeting['start_time']);
-            $meeting_seconds = $meeting_time % 86400; // Seconds from start of day
+            $meeting_seconds = $meeting_time % 86400; 
             
             if ($meeting_seconds >= $installation->start_time && 
                 $meeting_seconds <= $installation->end_time) {
                 
-                // Queue this meeting if not already queued
+                
                 $exists = $DB->record_exists('ortattendancebot_queue', [
                     'attendancebotid' => $installation->id,
                     'meeting_id' => $meeting['id']
@@ -129,9 +124,7 @@ class scheduler_task extends \core\task\scheduled_task {
         mtrace("  Summary: Queued $queued_count new meetings, skipped $skipped_count already queued");
     }
     
-    /**
-     * Schedule adhoc task to process queued meetings
-     */
+    
     private function schedule_processor($installation) {
         $task = new \mod_ortattendancebot\task\meeting_processor_task();
         $task->set_custom_data([

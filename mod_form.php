@@ -18,7 +18,7 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         global $CFG;
         $mform = $this->_form;
         
-        // General
+        
         $mform->addElement('header', 'general', get_string('general', 'form'));
         
         $mform->addElement('text', 'name', get_string('name'), ['size' => '64']);
@@ -27,14 +27,14 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         
         $this->standard_intro_elements();
         
-        // Attendance Configuration
+        
         $mform->addElement('header', 'config', get_string('configuration', 'mod_ortattendancebot'));
         
         $mform->addElement('selectyesno', 'enabled', get_string('enabled', 'mod_ortattendancebot'));
         $mform->setDefault('enabled', 1);
         $mform->addHelpButton('enabled', 'enabled', 'mod_ortattendancebot');
         
-        // Camera settings
+        
         $mform->addElement('selectyesno', 'camera_required', get_string('camera_required', 'mod_ortattendancebot'));
         $mform->setDefault('camera_required', 1);
         $mform->addHelpButton('camera_required', 'camera_required', 'mod_ortattendancebot');
@@ -45,7 +45,7 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         $mform->addHelpButton('camera_threshold', 'camera_threshold', 'mod_ortattendancebot');
         $mform->disabledIf('camera_threshold', 'camera_required', 'eq', 0);
         
-        // Attendance settings
+        
         $mform->addElement('text', 'min_percentage', get_string('min_percentage', 'mod_ortattendancebot'), ['size' => '10']);
         $mform->setType('min_percentage', PARAM_INT);
         $mform->setDefault('min_percentage', 75);
@@ -56,13 +56,13 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         $mform->setDefault('late_tolerance', 15);
         $mform->addHelpButton('late_tolerance', 'late_tolerance', 'mod_ortattendancebot');
         
-        // Date/Time ranges
+        
         $mform->addElement('header', 'datetime', get_string('datetime_range', 'mod_ortattendancebot'));
         
         $mform->addElement('date_selector', 'start_date', get_string('start_date', 'mod_ortattendancebot'));
         $mform->addElement('date_selector', 'end_date', get_string('end_date', 'mod_ortattendancebot'));
         
-        // Time range for daily classes
+        
         $hours = [];
         for ($i = 0; $i < 24; $i++) {
             $hours[$i] = sprintf('%02d', $i);
@@ -83,7 +83,7 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         $mform->setDefault('end_hour', 18);
         $mform->setDefault('end_minute', '00');
         
-        // Recording Backup Section
+        
         $mform->addElement('header', 'recordings', get_string('recordings_backup', 'mod_ortattendancebot'));
         
         $mform->addElement('selectyesno', 'backup_recordings', get_string('backup_recordings', 'mod_ortattendancebot'));
@@ -102,7 +102,7 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
         $mform->addHelpButton('delete_source', 'delete_source', 'mod_ortattendancebot');
         $mform->disabledIf('delete_source', 'backup_recordings', 'eq', 0);
         
-        // Standard elements
+        
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
     }
@@ -110,14 +110,14 @@ class mod_ortattendancebot_mod_form extends moodleform_mod {
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
         
-        // Validate recordings path if backup is enabled
+        
         if (!empty($data['backup_recordings'])) {
             $path = $data['recordings_path'];
             
             if (empty($path)) {
                 $errors['recordings_path'] = get_string('error_path_empty', 'mod_ortattendancebot');
             } else {
-                // Check if path exists or can be created
+                
                 if (!file_exists($path)) {
                     if (!@mkdir($path, 0775, true)) {
                         $errors['recordings_path'] = get_string('error_path_not_writable', 'mod_ortattendancebot');

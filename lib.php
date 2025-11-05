@@ -9,9 +9,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Supported features
- */
 function ortattendancebot_supports($feature) {
     switch($feature) {
         case FEATURE_MOD_INTRO:
@@ -25,16 +22,13 @@ function ortattendancebot_supports($feature) {
     }
 }
 
-/**
- * Saves a new instance of ortattendancebot
- */
 function ortattendancebot_add_instance($data, $mform = null) {
     global $DB;
     
     $data->timecreated = time();
     $data->timemodified = time();
     
-    // Set default values for new backup fields
+    
     if (!isset($data->backup_recordings)) {
         $data->backup_recordings = 0;
     }
@@ -48,15 +42,12 @@ function ortattendancebot_add_instance($data, $mform = null) {
     
     $id = $DB->insert_record('ortattendancebot', $data);
     
-    // Queue the retroactive fetch task
+    
     ortattendancebot_queue_retroactive_task($id, $data->course);
     
     return $id;
 }
 
-/**
- * Updates an instance of ortattendancebot
- */
 function ortattendancebot_update_instance($data, $mform = null) {
     global $DB;
     
@@ -65,39 +56,33 @@ function ortattendancebot_update_instance($data, $mform = null) {
     
     $result = $DB->update_record('ortattendancebot', $data);
     
-    // Queue the retroactive fetch task
+    
     ortattendancebot_queue_retroactive_task($data->id, $data->course);
     
     return $result;
 }
 
-/**
- * Queue retroactive fetch task
- */
 function ortattendancebot_queue_retroactive_task($attendancebotid, $courseid) {
     global $DB;
     
-    // Get fresh records from database
+    
     $attendancebot = $DB->get_record('ortattendancebot', ['id' => $attendancebotid], '*', MUST_EXIST);
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
     
-    // Create the adhoc task
+    
     $task = new \mod_ortattendancebot\task\fetch_retroactive_task();
     
-    // Prepare data to pass to the task
+    
     $taskdata = new \stdClass();
     $taskdata->attendancebotid = $attendancebot->id;
     $taskdata->courseid = $course->id;
     
     $task->set_custom_data($taskdata);
     
-    // Queue it for execution
+    
     \core\task\manager::queue_adhoc_task($task);
 }
 
-/**
- * Deletes an instance of ortattendancebot
- */
 function ortattendancebot_delete_instance($id) {
     global $DB;
     
@@ -105,20 +90,17 @@ function ortattendancebot_delete_instance($id) {
         return false;
     }
     
-    // Delete related queue entries
+    
     $DB->delete_records('ortattendancebot_queue', ['attendancebotid' => $id]);
     $DB->delete_records('ortattendancebot_backup_queue', ['attendancebotid' => $id]);
     $DB->delete_records('ortattendancebot_cleanup_queue', ['attendancebotid' => $id]);
     
-    // Delete the instance
+    
     $DB->delete_records('ortattendancebot', ['id' => $id]);
     
     return true;
 }
 
-/**
- * Get module instance by module name and course
- */
 function ortattendancebot_get_module_instance($modulename, $courseid) {
     global $DB;
     
@@ -137,9 +119,6 @@ function ortattendancebot_get_module_instance($modulename, $courseid) {
     return $result ? $result->instance : null;
 }
 
-/**
- * Convert hours and minutes to seconds
- */
 function ortattendancebot_time_to_seconds($hours, $minutes) {
     return ($hours * 3600) + ($minutes * 60);
 }

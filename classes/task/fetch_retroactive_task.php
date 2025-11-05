@@ -11,7 +11,7 @@ class fetch_retroactive_task extends \core\task\adhoc_task {
         $data = $this->get_custom_data();
         
         try {
-            // Fetch fresh records from database
+            
             $attendancebot = $DB->get_record('ortattendancebot', ['id' => $data->attendancebotid], '*', MUST_EXIST);
             $course = $DB->get_record('course', ['id' => $data->courseid], '*', MUST_EXIST);
             
@@ -24,7 +24,7 @@ class fetch_retroactive_task extends \core\task\adhoc_task {
             
         } catch (\Exception $e) {
             mtrace('Error in retroactive fetch: ' . $e->getMessage());
-            throw $e; // Re-throw to mark task as failed
+            throw $e; 
         }
     }
 }

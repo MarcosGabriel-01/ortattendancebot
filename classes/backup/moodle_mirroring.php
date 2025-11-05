@@ -11,16 +11,11 @@ namespace mod_ortattendancebot\backup;
 
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Handles uploading recordings to Moodle course folders
- */
 class moodle_mirroring {
     
     const SECTION_NAME = 'Clases grabadas bot';
     
-    /**
-     * Ensure recordings section exists in course
-     */
+    
     public static function ensure_recordings_section($courseid) {
         global $DB;
         
@@ -58,9 +53,7 @@ class moodle_mirroring {
         return $section;
     }
     
-    /**
-     * Get or create folder module for recordings
-     */
+    
     public static function get_or_create_folder($courseid, $folder_name) {
         global $CFG, $DB;
         
@@ -111,9 +104,7 @@ class moodle_mirroring {
         return $DB->get_record('course_modules', ['id' => $moduleinfo->coursemodule]);
     }
     
-    /**
-     * Upload file to Moodle folder
-     */
+    
     public static function upload_to_moodle($courseid, $folder_name, $subfolder_name, $filename, $filepath) {
         global $DB;
         
@@ -147,9 +138,7 @@ class moodle_mirroring {
         return $file->get_id();
     }
     
-    /**
-     * Check if file already exists
-     */
+    
     private static function check_duplicate($folder_instance, $subfolder, $filename, $filesize) {
         global $DB;
         

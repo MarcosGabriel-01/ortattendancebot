@@ -13,13 +13,7 @@ defined('MOODLE_INTERNAL') || die();
 
 class queue_service {
     
-    /**
-     * Add meetings to queue
-     * 
-     * @param int $attendancebotid
-     * @param array $meetings
-     * @return array ['queued' => int, 'skipped' => int]
-     */
+    
     public function add_meetings($attendancebotid, $meetings) {
         global $DB;
         
@@ -54,12 +48,7 @@ class queue_service {
         ];
     }
     
-    /**
-     * Get pending queue items
-     * 
-     * @param int $attendancebotid
-     * @return array
-     */
+    
     public function get_pending($attendancebotid) {
         global $DB;
         return $DB->get_records('ortattendancebot_queue', [
@@ -68,12 +57,7 @@ class queue_service {
         ]);
     }
     
-    /**
-     * Clear all queue items
-     * 
-     * @param int $attendancebotid
-     * @return int Number deleted
-     */
+    
     public function clear_all($attendancebotid) {
         global $DB;
         $count = $DB->count_records('ortattendancebot_queue', ['attendancebotid' => $attendancebotid]);
@@ -81,13 +65,7 @@ class queue_service {
         return $count;
     }
     
-    /**
-     * Get all queue items for display
-     * 
-     * @param int $attendancebotid
-     * @param int $limit
-     * @return array
-     */
+    
     public function get_all($attendancebotid, $limit = 50) {
         global $DB;
         return $DB->get_records('ortattendancebot_queue', 

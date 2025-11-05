@@ -21,11 +21,7 @@ class attendance_handler {
         $this->course = $course;
     }
     
-    /**
-     * Process attendance queue
-     * 
-     * @return array Result data
-     */
+    
     public function process() {
         global $CFG, $DB;
         
@@ -43,7 +39,7 @@ class attendance_handler {
             ];
         }
         
-        // Capture output
+        
         ob_start();
         
         require_once($CFG->dirroot . '/mod/ortattendancebot/classes/task/meeting_processor_task.php');

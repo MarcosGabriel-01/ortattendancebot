@@ -28,13 +28,13 @@ class meeting_processor_task extends \core\task\adhoc_task {
         
         mtrace("=== Processing for ortattendancebot ID: $attendancebotid ===");
         
-        // Get configuration
+        
         $config = $DB->get_record('ortattendancebot', ['id' => $attendancebotid], '*', MUST_EXIST);
         
-        // Step 1: Process attendance queue (all items)
+        
         $this->process_attendance_queue($config, $courseid, $attendancebotid);
         
-        // Step 2: Process backup queue (limit 5) - only if backup enabled
+        
         if ($config->backup_recordings) {
             $this->process_backup_queue($config, $courseid, $attendancebotid);
         }
@@ -42,15 +42,13 @@ class meeting_processor_task extends \core\task\adhoc_task {
         mtrace("\n=== Processing completed ===");
     }
     
-    /**
-     * Process attendance queue
-     */
+    
     private function process_attendance_queue($config, $courseid, $attendancebotid) {
         global $DB;
         
         mtrace("\n--- ATTENDANCE QUEUE ---");
         
-        // Get all unprocessed meetings
+        
         $queued = $DB->get_records('ortattendancebot_queue', [
             'attendancebotid' => $attendancebotid,
             'processed' => 0
@@ -73,14 +71,14 @@ class meeting_processor_task extends \core\task\adhoc_task {
                 
                 $processor->process_meeting($queue_item->meeting_id);
                 
-                // Mark as processed
+                
                 $queue_item->processed = 1;
                 $queue_item->timeprocessed = time();
                 $DB->update_record('ortattendancebot_queue', $queue_item);
                 
                 mtrace("✓ Attendance recorded");
                 
-                // Add to backup queue if backup enabled
+                
                 if ($config->backup_recordings) {
                     $this->add_to_backup_queue($queue_item, $attendancebotid);
                     mtrace("✓ Added to backup queue");
@@ -93,15 +91,13 @@ class meeting_processor_task extends \core\task\adhoc_task {
         }
     }
     
-    /**
-     * Process backup queue
-     */
+    
     private function process_backup_queue($config, $courseid, $attendancebotid) {
         global $DB;
         
         mtrace("\n--- BACKUP QUEUE ---");
         
-        // Get pending backups (not yet backed up, less than 3 attempts) - limit 5
+        
         $queued = $DB->get_records_select(
             'ortattendancebot_backup_queue',
             'attendancebotid = ? AND backed_up = 0 AND attempts < 3',
@@ -120,11 +116,11 @@ class meeting_processor_task extends \core\task\adhoc_task {
             return;
         }
         
-        // Initialize API client
+        
         require_once(__DIR__ . '/../api/client_connection.php');
         $api_client = \mod_ortattendancebot\api\client_connection::get_client();
         
-        // Initialize backup processor
+        
         require_once(__DIR__ . '/../backup/recording_backup.php');
         $backup_processor = new \mod_ortattendancebot\backup\recording_backup(
             $courseid,
@@ -137,16 +133,16 @@ class meeting_processor_task extends \core\task\adhoc_task {
             try {
                 mtrace("\nBacking up meeting: {$backup_item->meeting_id}");
                 
-                // Increment attempts
+                
                 $backup_item->attempts++;
                 $backup_item->last_attempt = time();
                 $DB->update_record('ortattendancebot_backup_queue', $backup_item);
                 
-                // Process backup
+                
                 $result = $backup_processor->process_backup($backup_item);
                 
                 if ($result['success']) {
-                    // Mark as backed up
+                    
                     $backup_item->backed_up = 1;
                     $backup_item->local_path = $result['local_path'];
                     $backup_item->moodle_file_id = $result['moodle_file_id'];
@@ -156,7 +152,7 @@ class meeting_processor_task extends \core\task\adhoc_task {
                     
                     mtrace("✓ Recording backed up successfully");
                 } else {
-                    // Update error
+                    
                     $backup_item->error_message = $result['error'];
                     $backup_item->timemodified = time();
                     $DB->update_record('ortattendancebot_backup_queue', $backup_item);
@@ -171,7 +167,7 @@ class meeting_processor_task extends \core\task\adhoc_task {
             } catch (\Exception $e) {
                 mtrace("✗ ERROR: " . $e->getMessage());
                 
-                // Update error message
+                
                 $backup_item->error_message = $e->getMessage();
                 $backup_item->timemodified = time();
                 $DB->update_record('ortattendancebot_backup_queue', $backup_item);
@@ -181,26 +177,24 @@ class meeting_processor_task extends \core\task\adhoc_task {
         }
     }
     
-    /**
-     * Add meeting to backup queue
-     */
+    
     private function add_to_backup_queue($queue_item, $attendancebotid) {
         global $DB;
         
-        // Check if already in backup queue
+        
         $exists = $DB->record_exists('ortattendancebot_backup_queue', [
             'attendancebotid' => $attendancebotid,
             'meeting_id' => $queue_item->meeting_id
         ]);
         
         if ($exists) {
-            return; // Already queued
+            return; 
         }
         
         $backup = new \stdClass();
         $backup->attendancebotid = $attendancebotid;
         $backup->meeting_id = $queue_item->meeting_id;
-        $backup->meeting_name = ''; // Will be fetched from API
+        $backup->meeting_name = ''; 
         $backup->attempts = 0;
         $backup->backed_up = 0;
         $backup->timecreated = time();

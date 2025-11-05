@@ -28,7 +28,7 @@ Procesa automáticamente la asistencia de reuniones Zoom y respalda grabaciones 
 
 1. **Módulo renombrado:** `attendancebot` → `ortattendancebot`
 2. **Función de respaldo de grabaciones agregada**
-3. **Límites de procesamiento de cola:** 25 asistencias, 5 respaldos por lote
+3. **Límites de procesamiento de cola:** 5 respaldos por lote
 4. **Nuevas tablas de base de datos:** backup_queue, cleanup_queue
 5. **Análisis mejorado de nombres** para organización de carpetas
 
@@ -71,15 +71,13 @@ Procesa automáticamente la asistencia de reuniones Zoom y respalda grabaciones 
 
 ## Procesamiento de Cola
 
-- **Asistencia:** 25 reuniones por lote
+- **Asistencia:**
 - **Respaldos:** 5 grabaciones por lote
 - **Lógica de Reintentos:** Máximo 3 intentos, intervalos de 24h
 
 ## Endpoints de API Requeridos
 
 
-GET /users/{email}/meetings?from=YYYY-MM-DD&to=YYYY-MM-DD
-GET /past_meetings/{meeting_id}/participants
 GET /meetings/{meeting_id}/recordings
 
 
@@ -90,7 +88,3 @@ GET /meetings/{meeting_id}/recordings
 - `mdl_ortattendancebot_backup_queue` - Cola de respaldo de grabaciones
 - `mdl_ortattendancebot_cleanup_queue` - Cola de limpieza de Zoom
 - `mdl_ortattendancebot_recordings` - Registro de grabaciones respaldadas
-
-## Licencia
-
-GNU GPL v3 o posterior

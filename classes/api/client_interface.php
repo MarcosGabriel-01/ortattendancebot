@@ -48,13 +48,12 @@ interface client_interface {
     public function get_recording_metadata($meeting_id);
     
     /**
-     * Delete a recording
+     * Delete recordings in batch
      * 
-     * @param string $meeting_id Meeting ID
-     * @param string $recording_id Recording ID
-     * @return void
+     * @param array $recordings Array of [{meeting_id, recording_id}, ...]
+     * @return array Results [{meeting_id, recording_id, success, error}, ...]
      */
-    public function delete_recording($meeting_id, $recording_id);
+    public function delete_recordings($recordings);
     
     /**
      * Get meeting information

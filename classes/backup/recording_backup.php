@@ -125,7 +125,10 @@ class recording_backup {
             // Step 6: Delete from source if enabled
             if ($this->delete_source) {
                 try {
-                    $this->api_client->delete_recording($backup_item->meeting_id, $backup_item->recording_id);
+                    $this->api_client->delete_recordings([[
+                        'meeting_id' => $backup_item->meeting_id,
+                        'recording_id' => $backup_item->recording_id
+                    ]]);
                 } catch (\Exception $e) {
                     // Log but don't fail - add to cleanup queue instead
                     $this->add_to_cleanup_queue($backup_item, $e->getMessage());

@@ -89,9 +89,13 @@ if ($action && confirm_sesskey()) {
             }
             
             if (isset($result['meetings'])) {
-                echo '<p>Total meetings found: <strong>' . $result['total_meetings'] . '</strong></p>';
+                echo '<p>' . get_string('result_total_meetings', 'mod_ortattendancebot') . ': <strong>' . $result['total_meetings'] . '</strong></p>';
                 if (!empty($result['meetings'])) {
-                    echo '<table class="table table-striped"><thead><tr><th>ID</th><th>Topic</th><th>Start Time</th></tr></thead><tbody>';
+                    echo '<table class="table table-striped"><thead><tr>';
+                    echo '<th>' . get_string('table_meeting_id', 'mod_ortattendancebot') . '</th>';
+                    echo '<th>' . get_string('table_topic', 'mod_ortattendancebot') . '</th>';
+                    echo '<th>' . get_string('table_start_time', 'mod_ortattendancebot') . '</th>';
+                    echo '</tr></thead><tbody>';
                     foreach ($result['meetings'] as $m) {
                         echo '<tr><td>' . htmlspecialchars($m['id']) . '</td><td>' . htmlspecialchars($m['topic']) . '</td><td>' . htmlspecialchars($m['start_time']) . '</td></tr>';
                     }
@@ -101,10 +105,10 @@ if ($action && confirm_sesskey()) {
             
             if (isset($result['queued'])) {
                 echo '<div class="alert alert-success">';
-                echo '<p>✓ Queued: ' . $result['queued'] . '</p>';
-                echo '<p>⚠ Already queued: ' . $result['skipped'] . '</p>';
+                echo '<p>✓ ' . get_string('result_queued', 'mod_ortattendancebot') . ': ' . $result['queued'] . '</p>';
+                echo '<p>⚠ ' . get_string('result_already_queued', 'mod_ortattendancebot') . ': ' . $result['skipped'] . '</p>';
                 if (isset($result['filtered_out'])) {
-                    echo '<p>✗ Filtered out: ' . $result['filtered_out'] . '</p>';
+                    echo '<p>✗ ' . get_string('result_filtered_out', 'mod_ortattendancebot') . ': ' . $result['filtered_out'] . '</p>';
                 }
                 echo '</div>';
             }
@@ -116,25 +120,25 @@ if ($action && confirm_sesskey()) {
             }
             
             if (isset($result['deleted'])) {
-                echo '<div class="alert alert-success">✓ Deleted: ' . $result['deleted'] . ' items</div>';
+                echo '<div class="alert alert-success">✓ ' . get_string('result_deleted', 'mod_ortattendancebot') . ': ' . $result['deleted'] . ' items</div>';
             }
             
             if (isset($result['sessions_deleted'])) {
                 echo '<div class="alert alert-success">';
-                echo '<p>✓ Sessions deleted: ' . $result['sessions_deleted'] . '</p>';
-                echo '<p>✓ Logs deleted: ' . $result['logs_deleted'] . '</p>';
+                echo '<p>✓ ' . get_string('result_sessions_deleted', 'mod_ortattendancebot') . ': ' . $result['sessions_deleted'] . '</p>';
+                echo '<p>✓ ' . get_string('result_logs_deleted', 'mod_ortattendancebot') . ': ' . $result['logs_deleted'] . '</p>';
                 echo '</div>';
             }
         }
         
     } catch (Exception $e) {
         echo '<div class="alert alert-danger">';
-        echo '<h4>Error</h4>';
+        echo '<h4>' . get_string('error_general', 'mod_ortattendancebot') . '</h4>';
         echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
         echo '</div>';
     }
     
-    echo '<a href="' . $PAGE->url . '" class="btn btn-primary">« Back</a>';
+    echo '<a href="' . $PAGE->url . '" class="btn btn-primary">« ' . get_string('action_back', 'mod_ortattendancebot') . '</a>';
     echo '</div>';
     echo $OUTPUT->footer();
     exit;
@@ -149,10 +153,10 @@ if ($attendancebot->intro) {
 
 // Configuration
 echo '<div class="card mb-3"><div class="card-body">';
-echo '<h4>Configuration</h4>';
-echo '<p><strong>Date Range:</strong> ' . userdate($attendancebot->start_date, '%Y-%m-%d') . ' to ' . userdate($attendancebot->end_date, '%Y-%m-%d') . '</p>';
-echo '<p><strong>Time Window:</strong> ' . gmdate('H:i', $attendancebot->start_time) . ' - ' . gmdate('H:i', $attendancebot->end_time) . ' UTC</p>';
-echo '<p><strong>Status:</strong> ' . ($attendancebot->enabled ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-secondary">Disabled</span>') . '</p>';
+echo '<h4>' . get_string('view_configuration', 'mod_ortattendancebot') . '</h4>';
+echo '<p><strong>' . get_string('view_date_range', 'mod_ortattendancebot') . ':</strong> ' . userdate($attendancebot->start_date, '%Y-%m-%d') . ' to ' . userdate($attendancebot->end_date, '%Y-%m-%d') . '</p>';
+echo '<p><strong>' . get_string('view_time_window', 'mod_ortattendancebot') . ':</strong> ' . gmdate('H:i', $attendancebot->start_time) . ' - ' . gmdate('H:i', $attendancebot->end_time) . ' UTC</p>';
+echo '<p><strong>' . get_string('view_status', 'mod_ortattendancebot') . ':</strong> ' . ($attendancebot->enabled ? '<span class="badge badge-success">' . get_string('status_enabled', 'mod_ortattendancebot') . '</span>' : '<span class="badge badge-secondary">' . get_string('status_disabled', 'mod_ortattendancebot') . '</span>') . '</p>';
 echo '</div></div>';
 
 // Action buttons
@@ -160,22 +164,22 @@ if (has_capability('moodle/course:manageactivities', $context)) {
     $sesskey = sesskey();
     
     echo '<div class="card mb-3"><div class="card-body">';
-    echo '<h4>Actions</h4>';
+    echo '<h4>' . get_string('view_actions', 'mod_ortattendancebot') . '</h4>';
     echo '<div class="btn-group" role="group">';
-    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'retroactive_fetch', 'sesskey' => $sesskey]) . '" class="btn btn-primary">🔄 Fetch All Meetings</a>';
-    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'queue_yesterday', 'sesskey' => $sesskey]) . '" class="btn btn-secondary">📥 Queue Yesterday</a>';
-    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'process_attendance', 'sesskey' => $sesskey]) . '" class="btn btn-success">✅ Process Attendance</a>';
+    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'retroactive_fetch', 'sesskey' => $sesskey]) . '" class="btn btn-primary">🔄 ' . get_string('action_fetch_all', 'mod_ortattendancebot') . '</a>';
+    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'queue_yesterday', 'sesskey' => $sesskey]) . '" class="btn btn-secondary">📥 ' . get_string('action_queue_yesterday', 'mod_ortattendancebot') . '</a>';
+    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'process_attendance', 'sesskey' => $sesskey]) . '" class="btn btn-success">✅ ' . get_string('action_process_attendance', 'mod_ortattendancebot') . '</a>';
     if ($attendancebot->backup_recordings) {
-        echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'process_backup', 'sesskey' => $sesskey]) . '" class="btn btn-info">💾 Process Backup</a>';
+        echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'process_backup', 'sesskey' => $sesskey]) . '" class="btn btn-info">💾 ' . get_string('action_process_backup', 'mod_ortattendancebot') . '</a>';
     }
     echo '</div></div></div>';
     
     echo '<div class="card mb-3 border-warning"><div class="card-body">';
-    echo '<h4 class="text-warning">⚠️ Testing Controls</h4>';
-    echo '<p class="text-muted">These actions delete data - use only for testing!</p>';
+    echo '<h4 class="text-warning">⚠️ ' . get_string('view_testing_controls', 'mod_ortattendancebot') . '</h4>';
+    echo '<p class="text-muted">' . get_string('view_testing_warning', 'mod_ortattendancebot') . '</p>';
     echo '<div class="btn-group" role="group">';
-    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'clear_queue', 'sesskey' => $sesskey]) . '" class="btn btn-warning" onclick="return confirm(\'Delete all queue items?\');">🗑️ Clear Queue</a>';
-    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'clear_attendance', 'sesskey' => $sesskey]) . '" class="btn btn-danger" onclick="return confirm(\'Delete all AttendanceBot sessions?\');">🗑️ Clear Attendance</a>';
+    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'clear_queue', 'sesskey' => $sesskey]) . '" class="btn btn-warning" onclick="return confirm(\'' . get_string('confirm_clear_queue', 'mod_ortattendancebot') . '\');">🗑️ ' . get_string('action_clear_queue', 'mod_ortattendancebot') . '</a>';
+    echo '<a href="' . new moodle_url($PAGE->url, ['action' => 'clear_attendance', 'sesskey' => $sesskey]) . '" class="btn btn-danger" onclick="return confirm(\'' . get_string('confirm_clear_attendance', 'mod_ortattendancebot') . '\');">🗑️ ' . get_string('action_clear_attendance', 'mod_ortattendancebot') . '</a>';
     echo '</div></div></div>';
 }
 
@@ -185,16 +189,20 @@ $queue_service = new \mod_ortattendancebot\services\queue_service();
 $queue_items = $queue_service->get_all($attendancebot->id);
 
 echo '<div class="card mb-3"><div class="card-body">';
-echo '<h4>Attendance Queue</h4>';
+echo '<h4>' . get_string('view_attendance_queue', 'mod_ortattendancebot') . '</h4>';
 
 if (empty($queue_items)) {
-    echo '<p class="text-muted">No meetings in queue</p>';
+    echo '<p class="text-muted">' . get_string('view_no_queue', 'mod_ortattendancebot') . '</p>';
 } else {
-    echo '<p>Found ' . count($queue_items) . ' meetings</p>';
+    echo '<p>' . get_string('view_found_meetings', 'mod_ortattendancebot', count($queue_items)) . '</p>';
     echo '<table class="table table-striped">';
-    echo '<thead><tr><th>Meeting ID</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+    echo '<thead><tr>';
+    echo '<th>' . get_string('table_meeting_id', 'mod_ortattendancebot') . '</th>';
+    echo '<th>' . get_string('table_date', 'mod_ortattendancebot') . '</th>';
+    echo '<th>' . get_string('table_status', 'mod_ortattendancebot') . '</th>';
+    echo '</tr></thead><tbody>';
     foreach ($queue_items as $item) {
-        $status = $item->processed ? '<span class="badge badge-success">✓ Processed</span>' : '<span class="badge badge-warning">⏳ Pending</span>';
+        $status = $item->processed ? '<span class="badge badge-success">✓ ' . get_string('status_processed', 'mod_ortattendancebot') . '</span>' : '<span class="badge badge-warning">⏳ ' . get_string('status_pending', 'mod_ortattendancebot') . '</span>';
         echo '<tr>';
         echo '<td>' . htmlspecialchars($item->meeting_id) . '</td>';
         echo '<td>' . userdate($item->meeting_date, '%Y-%m-%d %H:%M') . '</td>';

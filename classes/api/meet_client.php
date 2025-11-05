@@ -263,11 +263,24 @@ class meet_client implements client_interface {
     }
     
     /**
-     * Delete a recording from Google Drive
+     * Delete recordings from Google Drive
      */
-    public function delete_recording($meeting_id, $recording_id) {
-        $url = "{$this->drive_base_url}/files/{$recording_id}";
-        $this->make_request($url, 'DELETE');
+    public function delete_recordings($recordings) {
+        if (!isset($recordings[0])) {
+            $recordings = [$recordings];
+        }
+        
+        $results = [];
+        foreach ($recordings as $rec) {
+            try {
+                $url = "{$this->drive_base_url}/files/{$rec['recording_id']}";
+                $this->make_request($url, 'DELETE');
+                $results[] = ['meeting_id' => $rec['meeting_id'], 'recording_id' => $rec['recording_id'], 'success' => true, 'error' => null];
+            } catch (\Exception $e) {
+                $results[] = ['meeting_id' => $rec['meeting_id'], 'recording_id' => $rec['recording_id'], 'success' => false, 'error' => $e->getMessage()];
+            }
+        }
+        return $results;
     }
     
     /**

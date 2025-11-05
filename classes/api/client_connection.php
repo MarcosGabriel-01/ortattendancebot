@@ -29,29 +29,27 @@ class client_connection {
      * @throws \Exception
      */
     public static function get_client() {
-        $use_mock = get_config('mod_ortattendancebot', 'use_mock_api');
-        
-        if ($use_mock) {
-            mtrace("Using Mock API Client");
-            return new mock_client();
-        }
-        
-        $provider = get_config('mod_ortattendancebot', 'video_provider') ?: self::PROVIDER_ZOOM;
-        
+    $provider = get_config('mod_ortattendancebot', 'video_provider') ?: self::PROVIDER_ZOOM;
+
         switch ($provider) {
             case self::PROVIDER_ZOOM:
                 mtrace("Using Zoom API Client");
                 return new zoom_client();
-                
+
             case self::PROVIDER_MEET:
                 mtrace("Using Google Meet API Client");
                 return new meet_client();
-                
+
+            case self::PROVIDER_MOCK:
+                mtrace("Using Mock API Client");
+                return new mock_client();
+
             default:
                 throw new \Exception("Unknown video provider: $provider");
         }
     }
-    
+
+
     /**
      * Get client by provider type
      * 

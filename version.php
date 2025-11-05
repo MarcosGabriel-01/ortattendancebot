@@ -16,4 +16,5 @@ $plugin->release = '1.0.0';
 $plugin->maturity = MATURITY_STABLE;
 $plugin->dependencies = [
     'mod_attendance' => ANY_VERSION,
+    'mod_zoom' => ANY_VERSION,
 ];

@@ -188,7 +188,8 @@ class meeting_processor {
         mtrace("    Attended: " . round($attendance_percent) . "%");
         
         
-        $camera_on = $participant['camera_on'] ?? $participant['has_video'] ?? false;
+        //$camera_on = $participant['camera_on'] ?? $participant['has_video'] ?? false;
+        $camera_on = true;
         mtrace("    Camera: " . ($camera_on ? 'ON' : 'OFF'));
         
         
